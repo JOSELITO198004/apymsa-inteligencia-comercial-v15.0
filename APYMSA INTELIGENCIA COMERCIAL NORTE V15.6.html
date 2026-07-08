@@ -536,63 +536,215 @@
 async function loadFromCloud() {
         loaderIcon.classList.add('hidden');
         loaderSpinner.classList.remove('hidden');
-        document.getElementById('loader-text').innerText = "Conectando con la nube...";
 
-        // OPCIÓN RECOMENDADA:
-        // Sube el Excel al MISMO repositorio/carpeta donde publicas este HTML.
-        // Si el archivo tiene otro nombre en GitHub, cambia únicamente esta línea.
-        const cloudCandidates = [
-            './inteligencia%20comercial%20v15.6.xlsx',
-            'inteligencia%20comercial%20v15.6.xlsx',
-            'https://joselito198004.github.io/apymsa-inteligencia-comercial-v15.0/apymsa%20inteligencia%20comercial%20v15.1.xlsx'
-        ];
+        const loaderText = document.getElementById('loader-text');
+        const setMsg = (msg) => { if (loaderText) loaderText.innerText = msg; console.log('[NUBE]', msg); };
+        const pauseUI = () => new Promise(resolve => setTimeout(resolve, 30));
 
-        try {
-            let lastError = null;
-            let response = null;
-            let targetUrl = '';
+        async function fetchWithTimeout(url, timeoutMs = 30000) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                return await fetch(url, { cache: 'no-store', mode: 'cors', signal: controller.signal });
+            } finally {
+                clearTimeout(timer);
+            }
+        }
 
-            for (const baseUrl of cloudCandidates) {
+        async function gunzipToText(arrayBuffer) {
+            // DecompressionStream viene integrado en navegadores modernos.
+            // Si no existe, se usará el respaldo Excel.
+            if (typeof DecompressionStream === 'undefined') {
+                throw new Error('Este navegador no soporta descompresión GZIP nativa.');
+            }
+            const stream = new Blob([arrayBuffer]).stream().pipeThrough(new DecompressionStream('gzip'));
+            return await new Response(stream).text();
+        }
+
+        function compactJsonToObjects(payload) {
+            // Formato compacto recomendado:
+            // { "headers": ["codigo", ...], "rows": [[...], [...]] }
+            if (Array.isArray(payload)) return payload;
+
+            if (payload && Array.isArray(payload.headers) && Array.isArray(payload.rows)) {
+                return payload.rows.map(row => {
+                    const obj = {};
+                    payload.headers.forEach((header, index) => obj[header] = row[index] ?? '');
+                    return obj;
+                });
+            }
+
+            if (payload && Array.isArray(payload.data)) return payload.data;
+
+            throw new Error('El JSON no tiene formato válido. Usa array de objetos o formato compacto {headers, rows}.');
+        }
+
+        async function tryLoadGzipJson() {
+            const gzFileName = 'apymsa_inteligencia_comercial_v15_1.json.gz';
+            const encodedGz = encodeURIComponent(gzFileName);
+
+            const gzUrls = [
+                new URL(gzFileName, window.location.href).href,
+                './' + encodedGz,
+                'https://joselito198004.github.io/apymsa-inteligencia-comercial-v15.0/' + encodedGz,
+                'https://raw.githubusercontent.com/JOSELITO198004/apymsa-inteligencia-comercial-v15.0/main/' + encodedGz,
+                'https://cdn.jsdelivr.net/gh/JOSELITO198004/apymsa-inteligencia-comercial-v15.0@main/' + encodedGz
+            ];
+
+            const errors = [];
+
+            for (const baseUrl of gzUrls) {
                 try {
-                    const sep = baseUrl.includes('?') ? '&' : '?';
-                    targetUrl = baseUrl + sep + 'v=' + Date.now(); // rompe caché
-                    response = await fetch(targetUrl, { cache: 'no-store' });
+                    const targetUrl = baseUrl + (baseUrl.includes('?') ? '&' : '?') + 'v=' + Date.now();
+                    setMsg('Buscando base JSON comprimida...');
+                    console.log('[NUBE JSON.GZ] URL:', baseUrl);
+                    await pauseUI();
 
-                    if (!response.ok) {
-                        throw new Error('HTTP ' + response.status + ' en ' + baseUrl);
-                    }
-                    break;
+                    const response = await fetchWithTimeout(targetUrl, 30000);
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+
+                    setMsg('Descargando JSON comprimido...');
+                    await pauseUI();
+
+                    const arrayBuffer = await response.arrayBuffer();
+                    if (!arrayBuffer || arrayBuffer.byteLength < 10) throw new Error('Archivo GZIP vacío o incompleto');
+
+                    setMsg('Descomprimiendo JSON...');
+                    await pauseUI();
+
+                    const text = await gunzipToText(arrayBuffer);
+                    if (!text || text.trim().length < 5) throw new Error('JSON descomprimido vacío');
+
+                    setMsg('Leyendo JSON optimizado...');
+                    await pauseUI();
+
+                    const payload = JSON.parse(text);
+                    const data = compactJsonToObjects(payload);
+                    if (!data || data.length === 0) throw new Error('JSON sin registros');
+
+                    console.log('[NUBE JSON.GZ] Cargado desde:', baseUrl, 'Filas:', data.length);
+                    return data;
                 } catch (e) {
-                    lastError = e;
-                    response = null;
+                    const msg = e.name === 'AbortError' ? 'Tiempo agotado' : e.message;
+                    errors.push(baseUrl + ' -> ' + msg);
                 }
             }
 
-            if (!response) {
-                throw lastError || new Error('No fue posible conectar con la nube.');
+            console.warn('[NUBE JSON.GZ] No se pudo cargar:', errors);
+            return null;
+        }
+
+        async function tryLoadJsonPlano() {
+            // Respaldo por si algún día subes el JSON sin comprimir por Git command line.
+            const jsonFileName = 'apymsa_inteligencia_comercial_v15_1.json';
+            const encodedJson = encodeURIComponent(jsonFileName);
+            const jsonUrls = [
+                new URL(jsonFileName, window.location.href).href,
+                './' + encodedJson,
+                'https://joselito198004.github.io/apymsa-inteligencia-comercial-v15.0/' + encodedJson,
+                'https://raw.githubusercontent.com/JOSELITO198004/apymsa-inteligencia-comercial-v15.0/main/' + encodedJson,
+                'https://cdn.jsdelivr.net/gh/JOSELITO198004/apymsa-inteligencia-comercial-v15.0@main/' + encodedJson
+            ];
+            const errors = [];
+            for (const baseUrl of jsonUrls) {
+                try {
+                    const targetUrl = baseUrl + (baseUrl.includes('?') ? '&' : '?') + 'v=' + Date.now();
+                    setMsg('Buscando JSON sin comprimir...');
+                    await pauseUI();
+                    const response = await fetchWithTimeout(targetUrl, 30000);
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    const text = await response.text();
+                    const payload = JSON.parse(text);
+                    const data = compactJsonToObjects(payload);
+                    if (!data || data.length === 0) throw new Error('JSON sin registros');
+                    console.log('[NUBE JSON] Cargado desde:', baseUrl, 'Filas:', data.length);
+                    return data;
+                } catch (e) {
+                    errors.push(baseUrl + ' -> ' + (e.name === 'AbortError' ? 'Tiempo agotado' : e.message));
+                }
+            }
+            console.warn('[NUBE JSON] No se pudo cargar:', errors);
+            return null;
+        }
+
+        async function tryLoadExcelFallback() {
+            if (typeof XLSX === 'undefined') {
+                throw new Error('No cargó la librería XLSX para respaldo Excel.');
             }
 
-            const arrayBuffer = await response.arrayBuffer();
+            // Respaldo por si todavía no subiste el JSON.GZ.
+            // Incluye el nombre con caracter invisible U+200E y el nombre normal.
+            const encodedInvisible = '%E2%80%8Eapymsa%20inteligencia%20comercial%20v15.1.xlsx';
+            const encodedNormal = 'apymsa%20inteligencia%20comercial%20v15.1.xlsx';
 
-            // Validación rápida: un .xlsx real comienza como ZIP con bytes PK.
-            // Si GitHub devuelve una página HTML, aquí se detecta antes de intentar abrir Excel.
-            const signature = new Uint8Array(arrayBuffer.slice(0, 2));
-            if (!(signature[0] === 0x50 && signature[1] === 0x4B)) {
-                throw new Error('La URL no entregó un Excel válido. Revisa que el archivo sea público y que el enlace apunte directo al .xlsx.');
+            const excelUrls = [
+                './' + encodedInvisible,
+                'https://joselito198004.github.io/apymsa-inteligencia-comercial-v15.0/' + encodedInvisible,
+                'https://raw.githubusercontent.com/JOSELITO198004/apymsa-inteligencia-comercial-v15.0/main/' + encodedInvisible,
+                'https://cdn.jsdelivr.net/gh/JOSELITO198004/apymsa-inteligencia-comercial-v15.0@main/' + encodedInvisible,
+                './' + encodedNormal,
+                'https://joselito198004.github.io/apymsa-inteligencia-comercial-v15.0/' + encodedNormal,
+                'https://raw.githubusercontent.com/JOSELITO198004/apymsa-inteligencia-comercial-v15.0/main/' + encodedNormal,
+                'https://cdn.jsdelivr.net/gh/JOSELITO198004/apymsa-inteligencia-comercial-v15.0@main/' + encodedNormal
+            ];
+
+            const errors = [];
+
+            for (const baseUrl of excelUrls) {
+                try {
+                    const targetUrl = baseUrl + (baseUrl.includes('?') ? '&' : '?') + 'v=' + Date.now();
+                    setMsg('JSON no encontrado. Probando Excel nube...');
+                    console.log('[NUBE EXCEL] URL:', baseUrl);
+                    await pauseUI();
+
+                    const response = await fetchWithTimeout(targetUrl, 30000);
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+
+                    setMsg('Descargando Excel de respaldo...');
+                    await pauseUI();
+
+                    const arrayBuffer = await response.arrayBuffer();
+                    const signature = new Uint8Array(arrayBuffer.slice(0, 2));
+                    const isXlsx = signature[0] === 0x50 && signature[1] === 0x4B;
+                    if (!isXlsx) throw new Error('La respuesta no es Excel válido');
+
+                    setMsg('Leyendo Excel de respaldo...');
+                    await pauseUI();
+
+                    const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+                    const firstSheet = workbook.SheetNames[0];
+                    if (!firstSheet) throw new Error('El Excel no contiene hojas');
+
+                    const data = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet], { defval: '' });
+                    if (!data || data.length === 0) throw new Error('Excel sin registros');
+
+                    console.log('[NUBE EXCEL] Cargado desde:', baseUrl, 'Filas:', data.length);
+                    return data;
+                } catch (e) {
+                    const msg = e.name === 'AbortError' ? 'Tiempo agotado' : e.message;
+                    errors.push(baseUrl + ' -> ' + msg);
+                }
             }
 
-            const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-            const firstSheetName = workbook.SheetNames[0];
-            if (!firstSheetName) {
-                throw new Error('El Excel no contiene hojas.');
+            throw new Error('No se pudo cargar JSON.GZ, JSON ni Excel. Detalle Excel: ' + errors.join(' | '));
+        }
+
+        try {
+            setMsg('Conectando con nube...');
+            await pauseUI();
+
+            let data = await tryLoadGzipJson();
+
+            if (!data) {
+                data = await tryLoadJsonPlano();
             }
 
-            const data = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], { defval: '' });
-            if (!data || data.length === 0) {
-                showAlert('ARCHIVO EXCEL VACÍO.');
-                resetCarga();
-                return;
+            if (!data) {
+                data = await tryLoadExcelFallback();
             }
+
+            setMsg('Procesando base de datos...');
+            await pauseUI();
 
             processData(data);
         } catch (err) {
@@ -602,7 +754,7 @@ async function loadFromCloud() {
         }
     }
 
-    function handleFile(file) {
+function handleFile(file) {
         const ext = file.name.split('.').pop().toLowerCase();
         if (!['csv', 'xlsx', 'xls'].includes(ext)) { showAlert("FORMATO NO VÁLIDO."); return; }
         
