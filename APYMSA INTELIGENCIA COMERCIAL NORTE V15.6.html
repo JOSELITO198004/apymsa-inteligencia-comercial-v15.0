@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <title>Inteligencia Comercial APYMSA V15.6</title>
-    <meta property="og:title" content="Inteligencia Comercial APYMSA V15.6">
+    <title>Inteligencia Comercial APYMSA V15.9</title>
+    <meta property="og:title" content="Inteligencia Comercial APYMSA V15.9">
     <meta property="og:description" content="Reporte de Inteligencia Comercial (ICA)">
     <meta property="og:image" content="https://placehold.co/600x400/030712/00f3ff/png?text=ICA&font=Montserrat">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23030712%22/><text x=%2250%22 y=%2255%22 font-family=%22Arial%22 font-size=%2245%22 font-weight=%22bold%22 fill=%22%2300f3ff%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22>ICA</text></svg>">
@@ -13,6 +13,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -116,7 +117,7 @@
             </div>
             <div>
                 <h1 class="text-xl font-black italic tracking-tighter uppercase leading-none text-white">
-                    Inteligencia <span class="text-neon-cyan">Comercial V15.6</span>
+                    Inteligencia <span class="text-neon-cyan">Comercial V15.9</span>
                 </h1>
                 <p id="header-date-text" class="text-[9px] text-neon-cyan font-bold uppercase tracking-[0.2em] mt-1 opacity-80">
                     Calculando mes... • Radiografía comercial
@@ -125,7 +126,7 @@
         </div>
 
         <div class="flex flex-wrap items-center justify-center gap-3">
-            <input type="file" id="dataFile" accept=".csv, .xlsx, .xls" class="hidden">
+            <input type="file" id="dataFile" accept=".json.gz,.gz,application/gzip" class="hidden">
             <button id="btnFullScreen" onclick="toggleFullScreen()" class="bg-[#0f172a] hover:bg-[#1e293b] px-4 py-2 rounded-lg text-[10px] font-bold border border-slate-500 text-white flex items-center gap-2 shadow-lg">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l-5 5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
                 <span id="fs-text" class="uppercase">Pantalla Completa</span>
@@ -152,14 +153,14 @@
             <div id="load-icon" class="bg-[#00f3ff]/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform"><svg class="w-10 h-10 text-neon-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg></div>
             <div id="loader-spinner" class="hidden mb-6 flex flex-col items-center">
                 <div class="w-10 h-10 border-4 border-[#00f3ff]/20 border-t-[#00f3ff] rounded-full animate-spin mb-3"></div>
-                <span class="text-xs font-bold text-neon-cyan uppercase tracking-widest animate-pulse" id="loader-text">Procesando Base de Datos...</span>
+                <span class="text-xs font-bold text-neon-cyan uppercase tracking-widest animate-pulse" id="loader-text">Procesando Base de Datos Estructurada...</span>
             </div>
-            <h2 class="text-3xl font-black text-white mb-2 tracking-tight">INTELIGENCIA COMERCIAL <span class="text-neon-cyan">V15.6</span></h2>
-            <p class="text-slate-400 mb-8 text-sm font-medium">Arrastra o selecciona tu base de datos en formato <span class="font-bold text-white">Excel / CSV</span>.</p>
+            <h2 class="text-3xl font-black text-white mb-2 tracking-tight">INTELIGENCIA COMERCIAL <span class="text-neon-cyan">V15.9</span></h2>
+            <p class="text-slate-400 mb-8 text-sm font-medium">Selecciona el archivo local <span class="font-bold text-white">JSON.GZ</span> con Productos, Clientes, Jerarquía y Ventas.</p>
             
             <div class="flex flex-col md:flex-row gap-4 justify-center relative z-10">
-                <button type="button" id="btnSelectFile" class="bg-gradient-to-r from-[#ff004c] to-[#cc003d] text-white px-8 py-3.5 rounded-full text-[11px] font-black uppercase tracking-widest shadow-lg hover:scale-105 transition-transform">Archivo Local</button>
-                <button type="button" onclick="loadFromCloud()" class="bg-[#0f172a] border border-neon-cyan text-neon-cyan hover:bg-[#00f3ff] hover:text-black px-8 py-3.5 rounded-full text-[11px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(0,243,255,0.2)] transition-all">Cargar de Nube</button>
+                <button type="button" id="btnSelectFile" class="bg-gradient-to-r from-[#ff004c] to-[#cc003d] text-white px-8 py-3.5 rounded-full text-[11px] font-black uppercase tracking-widest shadow-lg hover:scale-105 transition-transform">Archivo Local (JSON.GZ)</button>
+                <button type="button" id="btnLoadCloud" class="bg-gradient-to-r from-[#00f3ff] to-[#008cff] text-black px-8 py-3.5 rounded-full text-[11px] font-black uppercase tracking-widest shadow-lg hover:scale-105 transition-transform">Cargar de la Nube</button>
             </div>
         </div>
     </div>
@@ -191,19 +192,37 @@
 
         <div id="client-view" class="hidden">
             <div class="mb-8 border-b border-white/10 pb-6 flex flex-col gap-4">
-                <div class="flex items-center gap-5">
-                    <button onclick="backToAdvisors()" class="bg-[#0f172a] hover:bg-[#00f3ff] hover:text-black text-neon-cyan border border-neon-cyan px-5 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all shadow-[0_0_15px_rgba(0,243,255,0.3)]">← Asesores</button>
-                    <div>
-                        <h2 class="text-3xl font-black text-white uppercase tracking-tight" id="current-advisor-title"></h2>
-                        <p class="text-neon-red text-xs mt-1 uppercase font-bold tracking-widest">Cartera de clientes activa</p>
+                <div class="flex flex-col md:flex-row items-center gap-5 justify-between w-full">
+                    <div class="flex items-center gap-5 w-full md:w-auto">
+                        <button onclick="backToAdvisors()" class="bg-[#0f172a] hover:bg-[#00f3ff] hover:text-black text-neon-cyan border border-neon-cyan px-5 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all shadow-[0_0_15px_rgba(0,243,255,0.3)] whitespace-nowrap">← Asesores</button>
+                        <div>
+                            <h2 class="text-3xl font-black text-white uppercase tracking-tight" id="current-advisor-title"></h2>
+                            <p class="text-neon-red text-xs mt-1 uppercase font-bold tracking-widest">Panel del Asesor</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-2 w-full md:w-auto mt-4 md:mt-0">
+                        <button id="tab-clientes" onclick="switchTab('clientes')" class="flex-1 md:flex-none bg-[#00f3ff] text-black border border-neon-cyan px-6 py-3 rounded-xl text-[11px] font-black uppercase transition-all shadow-[0_0_15px_rgba(0,243,255,0.3)]">Cartera de Clientes</button>
+                        <button id="tab-bonos" onclick="switchTab('bonos')" class="flex-1 md:flex-none bg-[#0f172a] hover:bg-[#ffbb00] hover:text-black text-neon-orange border border-neon-orange px-6 py-3 rounded-xl text-[11px] font-black uppercase transition-all shadow-[0_0_15px_rgba(255,187,0,0.3)]">Bonos Semanales</button>
                     </div>
                 </div>
             </div>
-            <div class="relative mb-8">
-                <input type="text" id="clientSearch" placeholder="Buscar cliente por ID o Razón Social..." class="w-full p-5 pl-14 bg-black/60 border-2 border-white/10 rounded-2xl focus:border-neon-cyan outline-none font-bold text-white transition-all text-lg">
-                <svg class="w-6 h-6 text-neon-cyan absolute left-5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+
+            <div id="tab-content-clientes">
+                <div class="relative mb-8">
+                    <input type="text" id="clientSearch" placeholder="Buscar cliente por ID o Razón Social..." class="w-full p-5 pl-14 bg-black/60 border-2 border-white/10 rounded-2xl focus:border-neon-cyan outline-none font-bold text-white transition-all text-lg">
+                    <svg class="w-6 h-6 text-neon-cyan absolute left-5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <div id="client-list" class="max-h-[500px] overflow-y-auto space-y-4 pr-4 custom-scrollbar"></div>
             </div>
-            <div id="client-list" class="max-h-[500px] overflow-y-auto space-y-4 pr-4 custom-scrollbar"></div>
+
+            <div id="tab-content-bonos" class="hidden">
+                <div class="mb-4">
+                    <p class="text-slate-400 text-sm font-bold uppercase tracking-wider">Tu esfuerzo, tu recompensa:</p>
+                    <h3 class="text-2xl font-black text-neon-orange uppercase">Bonos Semanales - Julio 2026</h3>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="bonus-cards-container"></div>
+            </div>
         </div>
     </div>
 
@@ -460,19 +479,29 @@
 
     function calcularDiasTranscurridos() {
         let diasAcumulados = 0;
-        const fechaInicio = new Date(CURRENT_YEAR, CURRENT_MONTH, 1);
-        const finDeMes = new Date(CURRENT_YEAR, CURRENT_MONTH + 1, 0);
-        let fechaLimite = NOW > finDeMes ? finDeMes : NOW;
-        if (NOW < fechaInicio) return 0;
-        for (let d = 1; d <= fechaLimite.getDate(); d++) {
-            let diaSemana = new Date(CURRENT_YEAR, CURRENT_MONTH, d).getDay();
+        let hoy = new Date();
+        
+        for (let d = 1; d <= hoy.getDate(); d++) {
+            let fechaIterada = new Date(hoy.getFullYear(), hoy.getMonth(), d);
+            let diaSemana = fechaIterada.getDay();
             if (diaSemana >= 1 && diaSemana <= 5) diasAcumulados += 1;
             else if (diaSemana === 6) diasAcumulados += 0.5;
         }
         return diasAcumulados;
     }
 
-    const DIAS_EFECTIVOS_MES = 23.5; 
+    function obtenerDiasEfectivosDelMes(anio, mes) {
+        let dias = 0;
+        let ultimoDia = new Date(anio, mes + 1, 0).getDate();
+        for (let d = 1; d <= ultimoDia; d++) {
+            let diaSemana = new Date(anio, mes, d).getDay();
+            if (diaSemana >= 1 && diaSemana <= 5) dias += 1;
+            else if (diaSemana === 6) dias += 0.5;
+        }
+        return dias;
+    }
+
+    const DIAS_EFECTIVOS_MES = obtenerDiasEfectivosDelMes(CURRENT_YEAR, CURRENT_MONTH); 
     const DIAS_TRANSCURRIDOS = calcularDiasTranscurridos();
     const marcasPropias = ["STAR", "BRESSER", "BRESSER LKW", "DYNAMIC", "TECNOFUEL", "VALUE", "ACOSA", "REWARD", "WEISCHLER", "CARFAN", "VERZE", "JULS CARMAN", "REIDEN"];
     
@@ -481,6 +510,81 @@
     dropZone.addEventListener('click', e => { if (e.target.id !== 'btnSelectFile' && e.target.tagName !== 'BUTTON') fileInput.click(); });
     document.getElementById('btnSelectFile').addEventListener('click', e => { e.stopPropagation(); fileInput.click(); });
     fileInput.addEventListener('change', e => { const file = e.target.files[0]; if (file) handleFile(file); });
+    document.getElementById('btnLoadCloud').addEventListener('click', async e => {
+        e.stopPropagation();
+        await tryLoadGzipJson();
+    });
+
+    function pickCloudArray(source, aliases) {
+        if (!source || typeof source !== 'object') return [];
+        for (const key of aliases) if (Array.isArray(source[key])) return source[key];
+        const normalizedAliases = aliases.map(normalizeKey);
+        for (const [key, value] of Object.entries(source)) {
+            if (Array.isArray(value) && normalizedAliases.includes(normalizeKey(key))) return value;
+        }
+        return [];
+    }
+
+    function processCloudPayload(payload) {
+        const root = payload && payload.data && typeof payload.data === 'object' ? payload.data : payload;
+        const dataProductos = pickCloudArray(root, ['Productos', 'productos', 'dataProductos']);
+        const dataClientes = pickCloudArray(root, ['Clientes', 'clientes', 'dataClientes']);
+        const dataJerarquia = pickCloudArray(root, ['Jerarquia', 'Jerarquía', 'jerarquia', 'dataJerarquia']);
+        const dataVentas = pickCloudArray(root, ['Ventas', 'ventas', 'dataVentas']);
+        if (!dataProductos.length || !dataClientes.length || !dataJerarquia.length || !dataVentas.length) {
+            throw new Error('El JSON no contiene Productos, Clientes, Jerarquia y Ventas.');
+        }
+        processData(dataProductos, dataClientes, dataJerarquia, dataVentas);
+    }
+
+    async function tryLoadGzipJson() {
+        const gzFileName = 'apymsa_inteligencia_comercial_v15_1.json.gz';
+        const encodedGz = encodeURIComponent(gzFileName);
+        const gzUrls = [
+            // Enlace exacto proporcionado. No contiene espacios en el nombre.
+            'https://github.com/JOSELITO198004/apymsa-inteligencia-comercial-v15.0/raw/refs/heads/main/' + encodedGz,
+            // URL directa recomendada de GitHub Raw.
+            'https://raw.githubusercontent.com/JOSELITO198004/apymsa-inteligencia-comercial-v15.0/refs/heads/main/' + encodedGz,
+            'https://raw.githubusercontent.com/JOSELITO198004/apymsa-inteligencia-comercial-v15.0/main/' + encodedGz,
+            'https://cdn.jsdelivr.net/gh/JOSELITO198004/apymsa-inteligencia-comercial-v15.0@main/' + encodedGz,
+            'https://joselito198004.github.io/apymsa-inteligencia-comercial-v15.0/' + encodedGz,
+            new URL(gzFileName, window.location.href).href
+        ];
+        const errors = [];
+        const cloudButton = document.getElementById('btnLoadCloud');
+        loaderIcon.classList.add('hidden');
+        loaderSpinner.classList.remove('hidden');
+        document.getElementById('loader-text').innerText = 'Cargando base de datos desde la nube...';
+        cloudButton.disabled = true;
+        cloudButton.classList.add('opacity-50', 'cursor-wait');
+        try {
+            for (const url of gzUrls) {
+                try {
+                    const response = await fetch(url, { cache: 'no-store' });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const compressed = new Uint8Array(await response.arrayBuffer());
+                    if (compressed.length < 2 || compressed[0] !== 0x1f || compressed[1] !== 0x8b) {
+                        const contentType = response.headers.get('content-type') || 'desconocido';
+                        throw new Error(`La respuesta no es GZIP (Content-Type: ${contentType}). Puede ser una pagina HTML, un 404 o bloqueo CORS.`);
+                    }
+                    if (!window.pako) throw new Error('No se pudo cargar Pako.');
+                    const jsonText = pako.ungzip(compressed, { to: 'string' });
+                    processCloudPayload(JSON.parse(jsonText));
+                    return;
+                } catch (err) {
+                    errors.push(`${url}: ${err.message}`);
+                }
+            }
+            throw new Error(errors.join(' | '));
+        } catch (err) {
+            console.error('Error cargando nube:', err);
+            showAlert('NO SE PUDO CARGAR LA BASE DESDE LA NUBE. REVISA EL ARCHIVO .JSON.GZ, LA RUTA O CORS.');
+            resetCarga();
+        } finally {
+            cloudButton.disabled = false;
+            cloudButton.classList.remove('opacity-50', 'cursor-wait');
+        }
+    }
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => { dropZone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); }); });
     dropZone.addEventListener('dragover', () => { dropZone.classList.add('bg-[#00f3ff]/10', 'border-[#00f3ff]'); });
     dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('bg-[#00f3ff]/10', 'border-[#00f3ff]'); });
@@ -495,7 +599,7 @@
     }
 
     function normalizeKey(key) { return String(key || "").toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9_]/g, ""); }
-    function getSku(item) { return String(item.producto || item.codigo || "").trim(); }
+    function getSku(item) { return String(item.codigo || item.producto || "").trim(); }
     function getDescription(item) { return String(item.descripcion_producto || item.descripcionproducto || item.descripcion || "SIN DESCRIPCIÓN").trim(); }
     function getBrand(item) { return String(item.marca || "SIN MARCA").trim(); }
     function getFamily(item) { return String(item.familias || item.familia || "SIN FAMILIA").trim(); }
@@ -503,7 +607,7 @@
     function getTipoServicio(item) { return String(item.servicio || item.tipodeservicio || item.tipo_servicio || "SIN SERVICIO").trim(); }
     function getArmadora(item) { return String(item.armadora || "SIN ARMADORA").trim(); }
     function getProductImageUrl(item) { return String(item.urlimagenproducto || item.url_imagen_producto || "").trim(); }
-    function getBrandLogoUrl(item) { return String(item.urlimagenmarca || item.url_imagen_marca || item.urllogomarca || item.logomarca || "").trim(); }
+    function getBrandLogoUrl(item) { return String(item.urlimagenmarca || item.url_imagen_marca || "").trim(); }
 
     function parseMoney(value) { 
         if (typeof value === 'number') return value;
@@ -533,378 +637,200 @@
     function getSemaforoProyeccionClass(porcentaje) { return porcentaje >= 100 ? "glow-green" : (porcentaje >= 85 ? "glow-orange" : "glow-red"); }
     function getSemaforoProyeccionTextClass(porcentaje) { return porcentaje >= 100 ? "status-text-green" : (porcentaje >= 85 ? "status-text-orange" : "status-text-red"); }
 
-async function loadFromCloud() {
+    async function handleFile(file) {
+        const fileName = String(file.name || '').trim();
+        const lowerName = fileName.toLowerCase();
+
+        if (!(lowerName.endsWith('.json.gz') || lowerName.endsWith('.gz'))) {
+            showAlert('SELECCIONA UN ARCHIVO LOCAL .JSON.GZ O .GZ.');
+            fileInput.value = '';
+            return;
+        }
+
         loaderIcon.classList.add('hidden');
         loaderSpinner.classList.remove('hidden');
-
-        const loaderText = document.getElementById('loader-text');
-        const setMsg = (msg) => { if (loaderText) loaderText.innerText = msg; console.log('[NUBE]', msg); };
-        const pauseUI = () => new Promise(resolve => setTimeout(resolve, 30));
-
-        async function fetchWithTimeout(url, timeoutMs = 30000) {
-            const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), timeoutMs);
-            try {
-                return await fetch(url, { cache: 'no-store', mode: 'cors', signal: controller.signal });
-            } finally {
-                clearTimeout(timer);
-            }
-        }
-
-        async function gunzipToText(arrayBuffer) {
-            // DecompressionStream viene integrado en navegadores modernos.
-            // Si no existe, se usará el respaldo Excel.
-            if (typeof DecompressionStream === 'undefined') {
-                throw new Error('Este navegador no soporta descompresión GZIP nativa.');
-            }
-            const stream = new Blob([arrayBuffer]).stream().pipeThrough(new DecompressionStream('gzip'));
-            return await new Response(stream).text();
-        }
-
-        function compactJsonToObjects(payload) {
-            // Formato compacto recomendado:
-            // { "headers": ["codigo", ...], "rows": [[...], [...]] }
-            if (Array.isArray(payload)) return payload;
-
-            if (payload && Array.isArray(payload.headers) && Array.isArray(payload.rows)) {
-                return payload.rows.map(row => {
-                    const obj = {};
-                    payload.headers.forEach((header, index) => obj[header] = row[index] ?? '');
-                    return obj;
-                });
-            }
-
-            if (payload && Array.isArray(payload.data)) return payload.data;
-
-            throw new Error('El JSON no tiene formato válido. Usa array de objetos o formato compacto {headers, rows}.');
-        }
-
-        async function tryLoadGzipJson() {
-            const gzFileName = 'apymsa_inteligencia_comercial_v15_1.json.gz';
-            const encodedGz = encodeURIComponent(gzFileName);
-
-            const gzUrls = [
-                new URL(gzFileName, window.location.href).href,
-                './' + encodedGz,
-                'https://joselito198004.github.io/apymsa-inteligencia-comercial-v15.0/' + encodedGz,
-                'https://raw.githubusercontent.com/JOSELITO198004/apymsa-inteligencia-comercial-v15.0/main/' + encodedGz,
-                'https://cdn.jsdelivr.net/gh/JOSELITO198004/apymsa-inteligencia-comercial-v15.0@main/' + encodedGz
-            ];
-
-            const errors = [];
-
-            for (const baseUrl of gzUrls) {
-                try {
-                    const targetUrl = baseUrl + (baseUrl.includes('?') ? '&' : '?') + 'v=' + Date.now();
-                    setMsg('Buscando base JSON comprimida...');
-                    console.log('[NUBE JSON.GZ] URL:', baseUrl);
-                    await pauseUI();
-
-                    const response = await fetchWithTimeout(targetUrl, 30000);
-                    if (!response.ok) throw new Error('HTTP ' + response.status);
-
-                    setMsg('Descargando JSON comprimido...');
-                    await pauseUI();
-
-                    const arrayBuffer = await response.arrayBuffer();
-                    if (!arrayBuffer || arrayBuffer.byteLength < 10) throw new Error('Archivo GZIP vacío o incompleto');
-
-                    setMsg('Descomprimiendo JSON...');
-                    await pauseUI();
-
-                    const text = await gunzipToText(arrayBuffer);
-                    if (!text || text.trim().length < 5) throw new Error('JSON descomprimido vacío');
-
-                    setMsg('Leyendo JSON optimizado...');
-                    await pauseUI();
-
-                    const payload = JSON.parse(text);
-                    const data = compactJsonToObjects(payload);
-                    if (!data || data.length === 0) throw new Error('JSON sin registros');
-
-                    console.log('[NUBE JSON.GZ] Cargado desde:', baseUrl, 'Filas:', data.length);
-                    return data;
-                } catch (e) {
-                    const msg = e.name === 'AbortError' ? 'Tiempo agotado' : e.message;
-                    errors.push(baseUrl + ' -> ' + msg);
-                }
-            }
-
-            console.warn('[NUBE JSON.GZ] No se pudo cargar:', errors);
-            return null;
-        }
-
-        async function tryLoadJsonPlano() {
-            // Respaldo por si algún día subes el JSON sin comprimir por Git command line.
-            const jsonFileName = 'apymsa_inteligencia_comercial_v15_1.json';
-            const encodedJson = encodeURIComponent(jsonFileName);
-            const jsonUrls = [
-                new URL(jsonFileName, window.location.href).href,
-                './' + encodedJson,
-                'https://joselito198004.github.io/apymsa-inteligencia-comercial-v15.0/' + encodedJson,
-                'https://raw.githubusercontent.com/JOSELITO198004/apymsa-inteligencia-comercial-v15.0/main/' + encodedJson,
-                'https://cdn.jsdelivr.net/gh/JOSELITO198004/apymsa-inteligencia-comercial-v15.0@main/' + encodedJson
-            ];
-            const errors = [];
-            for (const baseUrl of jsonUrls) {
-                try {
-                    const targetUrl = baseUrl + (baseUrl.includes('?') ? '&' : '?') + 'v=' + Date.now();
-                    setMsg('Buscando JSON sin comprimir...');
-                    await pauseUI();
-                    const response = await fetchWithTimeout(targetUrl, 30000);
-                    if (!response.ok) throw new Error('HTTP ' + response.status);
-                    const text = await response.text();
-                    const payload = JSON.parse(text);
-                    const data = compactJsonToObjects(payload);
-                    if (!data || data.length === 0) throw new Error('JSON sin registros');
-                    console.log('[NUBE JSON] Cargado desde:', baseUrl, 'Filas:', data.length);
-                    return data;
-                } catch (e) {
-                    errors.push(baseUrl + ' -> ' + (e.name === 'AbortError' ? 'Tiempo agotado' : e.message));
-                }
-            }
-            console.warn('[NUBE JSON] No se pudo cargar:', errors);
-            return null;
-        }
-
-        async function tryLoadExcelFallback() {
-            if (typeof XLSX === 'undefined') {
-                throw new Error('No cargó la librería XLSX para respaldo Excel.');
-            }
-
-            // Respaldo por si todavía no subiste el JSON.GZ.
-            // Incluye el nombre con caracter invisible U+200E y el nombre normal.
-            const encodedInvisible = '%E2%80%8Eapymsa%20inteligencia%20comercial%20v15.1.xlsx';
-            const encodedNormal = 'apymsa%20inteligencia%20comercial%20v15.1.xlsx';
-
-            const excelUrls = [
-                './' + encodedInvisible,
-                'https://joselito198004.github.io/apymsa-inteligencia-comercial-v15.0/' + encodedInvisible,
-                'https://raw.githubusercontent.com/JOSELITO198004/apymsa-inteligencia-comercial-v15.0/main/' + encodedInvisible,
-                'https://cdn.jsdelivr.net/gh/JOSELITO198004/apymsa-inteligencia-comercial-v15.0@main/' + encodedInvisible,
-                './' + encodedNormal,
-                'https://joselito198004.github.io/apymsa-inteligencia-comercial-v15.0/' + encodedNormal,
-                'https://raw.githubusercontent.com/JOSELITO198004/apymsa-inteligencia-comercial-v15.0/main/' + encodedNormal,
-                'https://cdn.jsdelivr.net/gh/JOSELITO198004/apymsa-inteligencia-comercial-v15.0@main/' + encodedNormal
-            ];
-
-            const errors = [];
-
-            for (const baseUrl of excelUrls) {
-                try {
-                    const targetUrl = baseUrl + (baseUrl.includes('?') ? '&' : '?') + 'v=' + Date.now();
-                    setMsg('JSON no encontrado. Probando Excel nube...');
-                    console.log('[NUBE EXCEL] URL:', baseUrl);
-                    await pauseUI();
-
-                    const response = await fetchWithTimeout(targetUrl, 30000);
-                    if (!response.ok) throw new Error('HTTP ' + response.status);
-
-                    setMsg('Descargando Excel de respaldo...');
-                    await pauseUI();
-
-                    const arrayBuffer = await response.arrayBuffer();
-                    const signature = new Uint8Array(arrayBuffer.slice(0, 2));
-                    const isXlsx = signature[0] === 0x50 && signature[1] === 0x4B;
-                    if (!isXlsx) throw new Error('La respuesta no es Excel válido');
-
-                    setMsg('Leyendo Excel de respaldo...');
-                    await pauseUI();
-
-                    const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
-                    const firstSheet = workbook.SheetNames[0];
-                    if (!firstSheet) throw new Error('El Excel no contiene hojas');
-
-                    const data = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet], { defval: '' });
-                    if (!data || data.length === 0) throw new Error('Excel sin registros');
-
-                    console.log('[NUBE EXCEL] Cargado desde:', baseUrl, 'Filas:', data.length);
-                    return data;
-                } catch (e) {
-                    const msg = e.name === 'AbortError' ? 'Tiempo agotado' : e.message;
-                    errors.push(baseUrl + ' -> ' + msg);
-                }
-            }
-
-            throw new Error('No se pudo cargar JSON.GZ, JSON ni Excel. Detalle Excel: ' + errors.join(' | '));
-        }
+        document.getElementById('loader-text').innerText = 'Leyendo y descomprimiendo JSON.GZ local...';
 
         try {
-            setMsg('Conectando con nube...');
-            await pauseUI();
+            const compressed = new Uint8Array(await file.arrayBuffer());
 
-            let data = await tryLoadGzipJson();
-
-            if (!data) {
-                data = await tryLoadJsonPlano();
+            if (compressed.length < 2 || compressed[0] !== 0x1f || compressed[1] !== 0x8b) {
+                throw new Error('El archivo seleccionado no tiene una firma GZIP valida.');
+            }
+            if (!window.pako) {
+                throw new Error('No se pudo cargar la libreria Pako para descomprimir.');
             }
 
-            if (!data) {
-                data = await tryLoadExcelFallback();
+            const jsonText = pako.ungzip(compressed, { to: 'string' });
+            if (!jsonText || !jsonText.trim()) {
+                throw new Error('El contenido JSON descomprimido esta vacio.');
             }
 
-            setMsg('Procesando base de datos...');
-            await pauseUI();
-
-            processData(data);
+            const payload = JSON.parse(jsonText.replace(/^\uFEFF/, '').trim());
+            processCloudPayload(payload);
         } catch (err) {
-            console.error('Detalle del error de nube:', err);
-            showAlert('ERROR NUBE: ' + err.message);
+            console.error('Error cargando JSON.GZ local:', err);
+            showAlert('ERROR JSON.GZ LOCAL: ' + (err && err.message ? err.message : 'Error desconocido'));
             resetCarga();
         }
     }
 
-function handleFile(file) {
-        const ext = file.name.split('.').pop().toLowerCase();
-        if (!['csv', 'xlsx', 'xls'].includes(ext)) { showAlert("FORMATO NO VÁLIDO."); return; }
-        
-        loaderIcon.classList.add('hidden');
-        loaderSpinner.classList.remove('hidden');
-        document.getElementById('loader-text').innerText = "Procesando base de datos, por favor espera...";
-
-        setTimeout(() => {
-            if (ext === 'csv') {
-                Papa.parse(file, {
-                    header: true, skipEmptyLines: true,
-                    complete: function(results) {
-                        if (!results.data || results.data.length === 0) { showAlert("ARCHIVO CSV VACÍO."); resetCarga(); return; }
-                        processData(results.data);
-                    },
-                    error: function() { showAlert("ERROR AL LEER EL ARCHIVO."); resetCarga(); }
-                });
-            } else {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const workbook = XLSX.read(e.target.result, { type: 'array' });
-                        const data = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                        if (!data || data.length === 0) { showAlert("ARCHIVO EXCEL VACÍO."); resetCarga(); return; }
-                        processData(data);
-                    } catch (err) { showAlert("ARCHIVO DEMASIADO PESADO. GUÁRDALO COMO CSV."); resetCarga(); }
-                };
-                reader.readAsArrayBuffer(file);
-            }
-        }, 150);
-    }
-
     function resetCarga() { loaderIcon.classList.remove('hidden'); loaderSpinner.classList.add('hidden'); fileInput.value = ''; }
 
-    function processData(data) {
+    function normalizeRow(row) {
+        if (!row || Object.keys(row).length === 0) return {};
+        const item = {};
+        for (let k in row) {
+            if (!k) continue;
+            const rawNorm = k.trim().toLowerCase();
+            const normalizedK = normalizeKey(k);
+            item[rawNorm] = row[k];
+            item[normalizedK] = row[k];
+        }
+        return item;
+    }
+
+    function processData(dataProductos, dataClientes, dataJerarquia, dataVentas) {
         companyTree.clear(); allClientsFlat.clear(); globalProducts.clear();
         globalSalesMn = {}; globalSalesPesos = {}; globalPiezas = {}; globalClientsPerSku = {};
         globalPromociones = {}; globalPromoText = {}; globalComentarioPromo = {}; globalLowestPrice = {};
         globalSkuStats = {};
 
-        data.forEach(row => {
-            if (!row || Object.keys(row).length === 0) return;
-            const item = {};
-            
-            let tempPromoVal = 0;
-            let tempPromoComment = "";
-
-            for (let k in row) {
-                if (!k) continue;
-                const rawNorm = k.trim().toLowerCase();
-                const normalizedK = normalizeKey(k);
-                item[rawNorm] = row[k];
-                item[normalizedK] = row[k];
-
-                // LECTURA ESTRICTA COMENTARIO (LLAVE)
-                if (rawNorm === "comentario") {
-                    let val = String(row[k]).trim();
-                    if (val && val !== "0" && val.toLowerCase() !== "null" && val.toLowerCase() !== "undefined" && val.toLowerCase() !== "na" && val.toLowerCase() !== "n/a") {
-                        tempPromoComment = val;
-                    }
-                }
-                
-                // LECTURA ESTRICTA PRECIO SOLICITADO
-                if (rawNorm === "precio solicitado" || rawNorm === "preciosolicitado" || rawNorm === "precio_solicitado") {
-                    let promo = parseMoney(row[k]);
-                    if (promo > 0) tempPromoVal = promo;
-                }
-            }
-
-            const sku = getSku(item);
-            const cliId = String(item.clienteid || item.id_cliente || item.cliente || "").trim().toUpperCase();
-            if (!cliId) return;
-
+        // 1. JERARQUÍA
+        dataJerarquia.forEach(row => {
+            const item = normalizeRow(row);
             const regName = String(item.gerente_regional || item.gerente || item.regional || "SIN GERENTE").trim().toUpperCase();
-            const zoneName = String(item.ciudad || item.region || item.zona || "SIN ZONA").trim().toUpperCase();
+            const zoneName = String(item.sucursal_vendedor || item.sucursal || "SIN SUCURSAL").trim().toUpperCase();
             const advName = String(item.asesor || item.vendedor || item.ejecutivo || "SIN ASESOR").trim().toUpperCase();
-            const cliName = String(item.razonsocial || item.razon_social || "SIN NOMBRE").trim();
-            const focus = String(item.enfoque || "GENERAL").trim();
-            
-            // LECTURA TIPO CLIENTE PARA MEDIA SUGERIDA
-            const tipoCliente = String(item.tipodecliente || item.tipocliente || item.tipo_cliente || item.tipo || "GENERAL").trim().toUpperCase();
-            
-            const fechaDoc = parseDate(item.fecha || item.fechafactura);
-            const esMesEnCurso = (fechaDoc && fechaDoc.getMonth() === CURRENT_MONTH && fechaDoc.getFullYear() === CURRENT_YEAR);
-
-            // LECTURA ESTRICTA VENTA NETA
-         let vmn = parseMoney(item['ventas_mn'] || item['venta mn'] || item['venta neta'] || 0);
-            let rowCuotaValue = parseMoney(item['ojetivoventamn'] || item['objetivoventamn'] || item['cuota'] || 0);
-            
-            // LECTURA VENTA EN PIEZAS (agregamos fallbacks comunes para asegurar lectura)
-            let rowVentaPiezasValue = parseMoney(item['venta en piezas'] || item['ventaenpiezas'] || item['piezas'] || item['cantidad'] || 0);
-            item._vmn_calculado = vmn;
-            item._venta_piezas_calculada = rowVentaPiezasValue;
-
-            if (sku) {
-                if (rowVentaPiezasValue > 0 && vmn > 0) {
-                    let pricePerUnit = vmn / rowVentaPiezasValue;
-                    if (!globalLowestPrice[sku] || pricePerUnit < globalLowestPrice[sku]) globalLowestPrice[sku] = pricePerUnit;
-                }
-                
-                if (tempPromoVal > 0 && (!globalPromociones[sku] || globalPromociones[sku] === 0)) globalPromociones[sku] = tempPromoVal;
-                if (tempPromoComment && !globalComentarioPromo[sku]) globalComentarioPromo[sku] = tempPromoComment;
-
-                if (!globalSalesMn[sku]) globalSalesMn[sku] = 0; globalSalesMn[sku] += vmn;
-                if (!globalSalesPesos[sku]) globalSalesPesos[sku] = 0; globalSalesPesos[sku] += vmn;
-                if (!globalPiezas[sku]) globalPiezas[sku] = 0; globalPiezas[sku] += rowVentaPiezasValue;
-                
-                // GUARDADO ESTRUCTURADO PARA MEDIA SUGERIDA
-                if (!globalSkuStats[sku]) globalSkuStats[sku] = {};
-                if (!globalSkuStats[sku][tipoCliente]) globalSkuStats[sku][tipoCliente] = { mn: 0, pz: 0 };
-                globalSkuStats[sku][tipoCliente].mn += vmn;
-                globalSkuStats[sku][tipoCliente].pz += rowVentaPiezasValue;
-
-                if (!globalClientsPerSku[sku]) globalClientsPerSku[sku] = new Set();
-                globalClientsPerSku[sku].add(cliId);
-                if (!globalProducts.has(sku)) globalProducts.set(sku, item);
-            }
 
             if (!companyTree.has(regName)) {
                 companyTree.set(regName, { name: regName, region: zoneName, totalVenta: 0, totalCuota: 0, asesores: new Map() });
             }
             const regNode = companyTree.get(regName);
-
             if (!regNode.asesores.has(advName)) {
-                regNode.asesores.set(advName, { name: advName, totalVenta: 0, totalCuota: 0, clientes: new Map() });
+                regNode.asesores.set(advName, { name: advName, sucursal: zoneName, totalVenta: 0, totalCuota: 0, clientes: new Map() });
             }
-            const advNode = regNode.asesores.get(advName);
+        });
 
-            if (!advNode.clientes.has(cliId)) {
-                advNode.clientes.set(cliId, {
-                    id: cliId, name: cliName, focus: focus, advisor: advName, regional: regName,
-                    tipoCliente: tipoCliente, venta: 0, cuota: 0, piezas: 0, rawItems: []
-                });
+        // 2. CLIENTES
+        dataClientes.forEach(row => {
+            const item = normalizeRow(row);
+            const cliId = String(item.cliente_id || item.clienteid || item.id_cliente || "").trim().toUpperCase();
+            const cliVendId = String(item.cliente_vendedor_id || item.clientevendedorid || "").trim().toUpperCase();
+            if (!cliId) return;
+
+            const advName = String(item.asesor || item.vendedor || "SIN ASESOR").trim().toUpperCase();
+            const cliName = String(item.razon_social || item.razonsocial || "SIN NOMBRE").trim();
+            const ciudad = String(item.ciudad || "").trim();
+            const tipoCliente = String(item.tipo_cliente || item.tipo || "GENERAL").trim().toUpperCase();
+            
+            let cliCuota = parseMoney(item['cuota'] || 0);
+            let cliVenta = parseMoney(item['venta_mn'] || 0); 
+            let cliVentaAnt = parseMoney(item['venta_mes_anterior'] || 0);
+            
+            let focusOriginal = String(item.enfoque || "GENERAL").trim();
+            let focus = focusOriginal;
+            
+            if (cliVentaAnt <= 0 && cliVenta <= 0) {
+                focus = "URGENTE:SIN VENTA";
+            } else if (cliVenta > 0 && focus === "URGENTE:SIN VENTA") {
+                focus = "GENERAL"; 
             }
-            const cliNode = advNode.clientes.get(cliId);
-            if (!cliNode.tipoCliente || cliNode.tipoCliente === "GENERAL") cliNode.tipoCliente = tipoCliente;
 
-            if (!allClientsFlat.has(cliId)) allClientsFlat.set(cliId, { id: cliId, rawItems: [] });
+            let foundReg = "SIN GERENTE";
+            let advNode = null;
+            let regNode = null;
+
+            for (let [rName, rNode] of companyTree.entries()) {
+                if (rNode.asesores.has(advName)) {
+                    foundReg = rName;
+                    regNode = rNode;
+                    advNode = rNode.asesores.get(advName);
+                    break;
+                }
+            }
+
+            if (!advNode) {
+                if (!companyTree.has("SIN GERENTE")) companyTree.set("SIN GERENTE", { name: "SIN GERENTE", region: "SIN SUCURSAL", totalVenta: 0, totalCuota: 0, asesores: new Map() });
+                regNode = companyTree.get("SIN GERENTE");
+                if (!regNode.asesores.has(advName)) regNode.asesores.set(advName, { name: advName, sucursal: "SIN SUCURSAL", totalVenta: 0, totalCuota: 0, clientes: new Map() });
+                advNode = regNode.asesores.get(advName);
+            }
+
+            const cliObj = {
+                id: cliId, cliVendId: cliVendId, name: cliName, ciudad: ciudad, focus: focus, advisor: advName, regional: foundReg,
+                tipoCliente: tipoCliente, venta: cliVenta, cuota: cliCuota, piezas: 0, rawItems: []
+            };
+
+            advNode.clientes.set(cliId, cliObj);
+            allClientsFlat.set(cliId, cliObj);
+
+            advNode.totalVenta += cliVenta;
+            advNode.totalCuota += cliCuota;
+            regNode.totalVenta += cliVenta;
+            regNode.totalCuota += cliCuota;
+        });
+
+        // 3. PRODUCTOS
+        dataProductos.forEach(row => {
+            const item = normalizeRow(row);
+            const sku = getSku(item);
+            if (!sku) return;
+
+            let tempPromoVal = parseMoney(item["precio solicitado"] || item["preciosolicitado"] || 0);
+            let tempPromoComment = "";
+            let val = String(item["comentario"] || "").trim();
+            if (val && val !== "0" && val.toLowerCase() !== "null" && val.toLowerCase() !== "undefined" && val.toLowerCase() !== "na" && val.toLowerCase() !== "n/a") {
+                tempPromoComment = val;
+            }
+
+            if (tempPromoVal > 0 && (!globalPromociones[sku] || globalPromociones[sku] === 0)) globalPromociones[sku] = tempPromoVal;
+            if (tempPromoComment && !globalComentarioPromo[sku]) globalComentarioPromo[sku] = tempPromoComment;
+
+            globalProducts.set(sku, item);
+        });
+
+        // 4. VENTAS FACTURACIÓN
+        dataVentas.forEach(row => {
+            const item = normalizeRow(row);
+            const cliId = String(item.cliente_id || item.clienteid || item.id_cliente || "").trim().toUpperCase();
+            if (!cliId || !allClientsFlat.has(cliId)) return;
+
+            const sku = getSku(item);
+            if (!sku) return;
+
+            // Ventas admite la columna "Marca"; si esta vacia se completa desde Productos.
+            const productForSale = globalProducts.get(sku);
+            item.marca = String(item.marca || item.brand || (productForSale ? getBrand(productForSale) : "SIN MARCA")).trim();
+
+            const cliNode = allClientsFlat.get(cliId);
+            const tipoCliente = cliNode.tipoCliente;
+            
+            let vpesos = parseMoney(item['venta en pesos'] || item['venta_en_pesos'] || 0);
+            let pz = parseMoney(item['venta en piezas'] || item['venta_en_piezas'] || item['piezas'] || item['cantidad'] || 0);
+            
+            item._vmn_calculado = vpesos;
+            item._venta_piezas_calculada = pz;
+            item.fecha_doc = parseDate(item.fecha_factura || item.fecha);
+            
             cliNode.rawItems.push(item);
-            allClientsFlat.get(cliId).rawItems.push(item);
 
-            if (esMesEnCurso) {
-                cliNode.venta += vmn;
-                cliNode.cuota += rowCuotaValue;
-                cliNode.piezas += rowVentaPiezasValue;
-                advNode.totalVenta += vmn;
-                advNode.totalCuota += rowCuotaValue;
-                regNode.totalVenta += vmn;
-                regNode.totalCuota += rowCuotaValue;
+            if (pz > 0 && vpesos > 0) {
+                let pricePerUnit = vpesos / pz;
+                if (!globalLowestPrice[sku] || pricePerUnit < globalLowestPrice[sku]) globalLowestPrice[sku] = pricePerUnit;
             }
+
+            if (!globalSalesPesos[sku]) globalSalesPesos[sku] = 0; globalSalesPesos[sku] += vpesos;
+            if (!globalSalesMn[sku]) globalSalesMn[sku] = 0; globalSalesMn[sku] += vpesos; 
+            if (!globalPiezas[sku]) globalPiezas[sku] = 0; globalPiezas[sku] += pz;
+            
+            if (!globalSkuStats[sku]) globalSkuStats[sku] = {};
+            if (!globalSkuStats[sku][tipoCliente]) globalSkuStats[sku][tipoCliente] = { mn: 0, pz: 0 };
+            globalSkuStats[sku][tipoCliente].mn += vpesos;
+            globalSkuStats[sku][tipoCliente].pz += pz;
+
+            if (!globalClientsPerSku[sku]) globalClientsPerSku[sku] = new Set();
+            globalClientsPerSku[sku].add(cliId);
         });
 
         loaderIcon.classList.remove('hidden'); loaderSpinner.classList.add('hidden');
@@ -953,7 +879,11 @@ function handleFile(file) {
             div.onclick = () => openAdvisorClients(adv.name);
             div.innerHTML = `
                 <div class="flex justify-between items-start mb-5">
-                    <div><div class="text-[9px] text-slate-400 font-bold uppercase mb-1">Asesor Comercial</div><div class="text-xl font-black text-white uppercase">${adv.name}</div></div>
+                    <div>
+                        <div class="text-[9px] text-slate-400 font-bold uppercase mb-1">Asesor Comercial</div>
+                        <div class="text-xl font-black text-white uppercase">${adv.name}</div>
+                        <div class="text-[8px] text-neon-cyan font-bold uppercase mt-1">Sucursal: ${adv.sucursal || 'N/A'}</div>
+                    </div>
                     <div class="traffic-light ${getSemaforoProyeccionClass(porcentaje)}"></div>
                 </div>
                 <div class="grid grid-cols-2 gap-3 mb-4">
@@ -973,13 +903,18 @@ function handleFile(file) {
         Array.from(currentSelectedAdvisor.clientes.values()).filter(c => c.id.toLowerCase().includes(search) || c.name.toLowerCase().includes(search)).sort((a,b)=>b.venta - a.venta).forEach(client => {
             const proyeccion = DIAS_TRANSCURRIDOS > 0 ? (client.venta / DIAS_TRANSCURRIDOS) * DIAS_EFECTIVOS_MES : 0;
             const porcentaje = client.cuota > 0 ? (proyeccion / client.cuota) * 100 : 0;
+            
+            let focusColor = "bg-white/5 text-white";
+            if (client.focus === "URGENTE:SIN VENTA") focusColor = "bg-[#ff004c]/20 text-[#ff004c] border border-[#ff004c]/50 animate-pulse";
+            
             const div = document.createElement('div');
             div.className = "p-5 bg-[#050b14]/80 border-2 border-white/5 rounded-2xl hover:border-neon-cyan cursor-pointer flex flex-col md:flex-row justify-between items-center gap-4 group";
             div.onclick = () => selectClient(client.id);
             div.innerHTML = `
                 <div class="flex-grow w-full">
-                    <div class="flex items-center gap-3 mb-2"><span class="bg-white/5 text-white px-2.5 py-1 rounded text-[8px] font-black">${client.focus}</span><span class="text-[9px] text-slate-500 font-bold">ID: ${client.id}</span></div>
+                    <div class="flex items-center gap-3 mb-2"><span class="${focusColor} px-2.5 py-1 rounded text-[8px] font-black">${client.focus}</span><span class="text-[9px] text-slate-500 font-bold">ID: ${client.cliVendId || client.id}</span></div>
                     <div class="text-xl font-black text-white uppercase group-hover:text-neon-cyan">${client.name}</div>
+                    <div class="text-[10px] text-slate-400 font-bold uppercase mt-1"><span class="text-neon-cyan">📍</span> ${client.ciudad || 'CIUDAD NO ESPECIFICADA'}</div>
                     <div class="grid grid-cols-3 gap-4 mt-3 max-w-2xl bg-white/5 p-3 rounded-xl">
                         <div><span class="text-[8px] text-slate-400 font-bold block uppercase">Venta Neta Mes</span><span class="text-sm font-black text-white">${fmt.format(client.venta)}</span></div>
                         <div><span class="text-[8px] text-slate-400 font-bold block uppercase">Objetivo Mn</span><span class="text-sm font-black text-white">${fmt.format(client.cuota)}</span></div>
@@ -994,9 +929,111 @@ function handleFile(file) {
         });
     }
 
+    function switchTab(tabName) {
+        if (tabName === 'clientes') {
+            document.getElementById('tab-content-clientes').classList.remove('hidden');
+            document.getElementById('tab-content-bonos').classList.add('hidden');
+            
+            document.getElementById('tab-clientes').classList.add('bg-[#00f3ff]', 'text-black');
+            document.getElementById('tab-clientes').classList.remove('bg-[#0f172a]', 'text-neon-cyan');
+            
+            document.getElementById('tab-bonos').classList.add('bg-[#0f172a]', 'text-neon-orange');
+            document.getElementById('tab-bonos').classList.remove('bg-[#ffbb00]', 'text-black');
+        } else {
+            document.getElementById('tab-content-clientes').classList.add('hidden');
+            document.getElementById('tab-content-bonos').classList.remove('hidden');
+            
+            document.getElementById('tab-bonos').classList.add('bg-[#ffbb00]', 'text-black');
+            document.getElementById('tab-bonos').classList.remove('bg-[#0f172a]', 'text-neon-orange');
+            
+            document.getElementById('tab-clientes').classList.add('bg-[#0f172a]', 'text-neon-cyan');
+            document.getElementById('tab-clientes').classList.remove('bg-[#00f3ff]', 'text-black');
+            
+            renderBonusView();
+        }
+    }
+
+    function renderBonusView() {
+        const container = document.getElementById('bonus-cards-container');
+        container.innerHTML = '';
+        if (!currentSelectedAdvisor) return;
+
+        const fmt = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
+        const ventaAcumulada = currentSelectedAdvisor.totalVenta;
+        const cuotaTotal = currentSelectedAdvisor.totalCuota;
+
+        const metasSemanales = [
+            { nombre: 'Semana 1', corte: 'Corte 1 al 11 de Julio', obj: 0.36 },
+            { nombre: 'Semana 2', corte: 'Corte 1 al 18 de Julio', obj: 0.58 },
+            { nombre: 'Semana 3', corte: 'Corte 1 al 25 de Julio', obj: 0.80 }
+        ];
+
+        metasSemanales.forEach((meta) => {
+            const metaSemanal = cuotaTotal * meta.obj;
+            const deficit = metaSemanal > ventaAcumulada ? metaSemanal - ventaAcumulada : 0;
+            const porcentajeAvance = metaSemanal > 0 ? (ventaAcumulada / metaSemanal) * 100 : 0;
+            const logrado = ventaAcumulada >= metaSemanal;
+
+            const colorBorder = logrado ? 'border-neon-green' : 'border-neon-red';
+            const colorText = logrado ? 'text-neon-green' : 'text-neon-red';
+            const shadow = logrado ? 'shadow-[0_0_15px_rgba(0,255,102,0.2)]' : 'shadow-[0_0_15px_rgba(255,0,76,0.2)]';
+
+            container.innerHTML += `
+                <div class="bg-black/60 border ${colorBorder} rounded-2xl p-6 ${shadow} flex flex-col justify-between relative overflow-hidden group hover:scale-105 transition-transform">
+                    ${logrado ? `<div class="absolute -right-8 top-4 bg-neon-green text-black text-[9px] font-black uppercase py-1 px-10 rotate-45 shadow-[0_0_10px_rgba(0,255,102,0.5)]">LOGRADO</div>` : ''}
+                    
+                    <div class="mb-4 border-b border-white/10 pb-4">
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">${meta.corte}</div>
+                        <div class="text-2xl font-black text-white uppercase">${meta.nombre} <span class="text-lg text-neon-orange">(${meta.obj * 100}%)</span></div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-5">
+                        <div>
+                            <span class="text-[8px] text-slate-500 font-bold block uppercase">Meta Semanal</span>
+                            <span class="text-sm font-black text-white">${fmt.format(metaSemanal)}</span>
+                        </div>
+                        <div>
+                            <span class="text-[8px] text-slate-500 font-bold block uppercase">Avance (Venta Real)</span>
+                            <span class="text-sm font-black text-white">${fmt.format(ventaAcumulada)}</span>
+                        </div>
+                        <div class="col-span-2 bg-white/5 p-3 rounded-lg border border-white/5">
+                            <span class="text-[9px] text-slate-500 font-bold block uppercase">Déficit para Lograr Bono</span>
+                            <span class="text-xl font-black ${colorText}">${fmt.format(deficit)}</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[9px] text-slate-400 font-bold uppercase">Progreso vs Semana</span>
+                            <span class="text-[11px] font-black ${colorText}">${porcentajeAvance.toFixed(1)}%</span>
+                        </div>
+                        <div class="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                            <div class="${logrado ? 'bg-neon-green' : 'bg-neon-red'} h-2 rounded-full" style="width: ${Math.min(porcentajeAvance, 100)}%"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
     function openRegionalAdvisors(name) { currentSelectedRegional = companyTree.get(name); if(!currentSelectedRegional) return; document.getElementById('regional-view').classList.add('hidden'); document.getElementById('advisor-view').classList.remove('hidden'); document.getElementById('current-regional-title').innerText = name; appCurrentState = "PANEL_ASESORES"; renderAdvisorCards(); }
     function backToRegionals() { currentSelectedRegional = null; document.getElementById('advisor-view').classList.add('hidden'); document.getElementById('regional-view').classList.remove('hidden'); appCurrentState = "PANEL_REGIONALES"; }
-    function openAdvisorClients(name) { if(!currentSelectedRegional) return; currentSelectedAdvisor = currentSelectedRegional.asesores.get(name); if(!currentSelectedAdvisor) return; document.getElementById('advisor-view').classList.add('hidden'); document.getElementById('client-view').classList.remove('hidden'); document.getElementById('current-advisor-title').innerText = name; appCurrentState = "LISTA_CLIENTES"; renderClientList(); }
+    
+    function openAdvisorClients(name) { 
+        if(!currentSelectedRegional) return; 
+        currentSelectedAdvisor = currentSelectedRegional.asesores.get(name); 
+        if(!currentSelectedAdvisor) return; 
+        
+        document.getElementById('advisor-view').classList.add('hidden'); 
+        document.getElementById('client-view').classList.remove('hidden'); 
+        document.getElementById('current-advisor-title').innerText = name; 
+        
+        switchTab('clientes');
+        
+        appCurrentState = "LISTA_CLIENTES"; 
+        renderClientList(); 
+    }
+    
     function backToAdvisors() { currentSelectedAdvisor = null; document.getElementById('client-view').classList.add('hidden'); document.getElementById('advisor-view').classList.remove('hidden'); appCurrentState = "PANEL_ASESORES"; }
 
     function selectClient(id) {
@@ -1008,7 +1045,7 @@ function handleFile(file) {
 
         const fmt = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
         document.getElementById('strategy-client-name').innerText = selectedClient.name;
-        document.getElementById('strategy-client-meta').innerText = `ID: ${selectedClient.id} | Asesor: ${selectedClient.advisor} | Venta Mes: ${fmt.format(selectedClient.venta || 0)}`;
+        document.getElementById('strategy-client-meta').innerText = `ID: ${selectedClient.cliVendId || selectedClient.id} | Asesor: ${selectedClient.advisor} | Venta Mes: ${fmt.format(selectedClient.venta || 0)}`;
         renderDashboards(selectedClient); appCurrentState = "MENU_ESTRATEGIAS";
     }
 
@@ -1029,7 +1066,7 @@ function handleFile(file) {
 
         let targets = [{ m: m3, y: y3, label: MESES_NOMBRES[m3], value: 0 }, { m: m2, y: y2, label: MESES_NOMBRES[m2], value: 0 }, { m: m1, y: y1, label: MESES_NOMBRES[m1], value: 0 }];
         client.rawItems.forEach(item => {
-            let d = parseDate(item.fecha || item.fechafactura);
+            let d = item.fecha_doc;
             if (d) { let target = targets.find(t => t.m === d.getMonth() && t.y === d.getFullYear()); if (target) target.value += (item._vmn_calculado || 0); }
         });
 
@@ -1051,21 +1088,20 @@ function handleFile(file) {
         else if (appCurrentState === "PANEL_REGIONALES") { step2.classList.add('hidden'); step1.classList.remove('hidden'); btnBack.classList.add('hidden'); fileInput.value = ''; appCurrentState = "LOAD"; }
     }
 
-    // --- FUNCIONES CALCULO ESTRICTO --- //
     function getLastPriceForClient(sku, clientObj) {
         let lastPrice = null;
         if (clientObj && clientObj.rawItems) {
             const historyRecords = clientObj.rawItems.filter(raw => getSku(raw).toUpperCase() === sku.toUpperCase());
             let sortedHistory = [...historyRecords].sort((a,b)=> {
-                let da = parseDate(a.fecha || a.fechafactura);
-                let db = parseDate(b.fecha || b.fechafactura);
+                let da = a.fecha_doc;
+                let db = b.fecha_doc;
                 let ta = da ? da.getTime() : 0;
                 let tb = db ? db.getTime() : 0;
                 return ta - tb;
             });
             for (let k = sortedHistory.length - 1; k >= 0; k--) {
-                let pz = parseMoney(sortedHistory[k]['venta en piezas'] || sortedHistory[k]['ventaenpiezas'] || sortedHistory[k]['piezas'] || sortedHistory[k]['cantidad']);
-                let mn = parseMoney(sortedHistory[k]['venta neta'] || sortedHistory[k]['ventaneta'] || sortedHistory[k]['venta_neta']);
+                let pz = sortedHistory[k]._venta_piezas_calculada;
+                let mn = sortedHistory[k]._vmn_calculado;
                 if (pz > 0 && mn > 0) { 
                     lastPrice = mn / pz; 
                     break; 
@@ -1168,22 +1204,18 @@ function handleFile(file) {
             let comentarioPromo = globalComentarioPromo[sku] || "";
             let psug = getPrecioSugerido(sku, selectedClient.tipoCliente);
 
-            // LOGICA TARJETA 1 - COMENTARIO
             let txtComentario = "";
             if (comentarioPromo !== "") txtComentario = comentarioPromo;
             else if (ultimoPrecio !== null) txtComentario = "Precio Especial";
             else txtComentario = "No aplica";
 
-            // LOGICA TARJETA 2 - PRECIO SOLICITADO
             let txtSolicitado = precioPromo > 0 ? fmt.format(precioPromo) : "sin promoción";
 
-            // LOGICA TARJETA 3 - PRECIO SUGERIDO
             let txtSugerido = "No aplica";
             if (precioPromo === 0 && ultimoPrecio === null) {
                 txtSugerido = psug > 0 ? fmt.format(psug) : "Sin historial global";
             }
 
-            // LOGICA TARJETA 4 - ULTIMO PRECIO VENDIDO
             let txtUltimo = ultimoPrecio !== null ? fmt.format(ultimoPrecio) : "sin historial";
 
             container.innerHTML += `
@@ -1234,13 +1266,11 @@ function handleFile(file) {
             let comentarioPromo = globalComentarioPromo[sku] || "";
             let psug = getPrecioSugerido(sku, selectedClient.tipoCliente);
 
-            // REGLAS COLUMNA COMENTARIO EN EXCEL
             let exComentario = "";
             if (comentarioPromo !== "") exComentario = comentarioPromo;
             else if (ultimoPrecio !== null) exComentario = "Precio Especial";
             else exComentario = "no aplica";
 
-            // REGLAS COLUMNA PRECIO SOLICITADO EN EXCEL
             let exPrecio = "";
             if (precioPromo > 0) exPrecio = parseFloat(precioPromo.toFixed(2));
             else if (ultimoPrecio !== null) exPrecio = parseFloat(ultimoPrecio.toFixed(2));
@@ -1276,9 +1306,6 @@ function handleFile(file) {
         generateCatalogByStrategy('manual');
     }
 
-    // --- FIN DE FUNCIONES MANUALES FLOTANTES --- //
-
-
     function generateCatalogByStrategy(strategyType) {
         if (!selectedClient) { showAlert("No hay cliente seleccionado."); return; }
         let targetProducts = [];
@@ -1288,7 +1315,6 @@ function handleFile(file) {
         if (strategyType === 'manual') {
             if (manualSkus.length === 0) { showAlert("No has capturado ningún código."); return; }
             currentStrategyLabel = "Cotización Manual";
-            // Invertimos para que el orden de impresion sea el orden en el que los agregaste visualmente
             targetProducts = [...manualSkus].reverse().map(sku => globalProducts.get(sku)).filter(Boolean);
         } else if (strategyType === 'skuPorMes') {
             const targetMonth = parseInt(document.getElementById('sku-month-selector').value, 10);
@@ -1302,7 +1328,7 @@ function handleFile(file) {
                 if (clientObj && clientObj.rawItems) {
                     clientObj.rawItems.forEach(item => {
                         const sku = getSku(item); if (!sku) return;
-                        const fechaFact = parseDate(item.fecha || item.fechafactura);
+                        const fechaFact = item.fecha_doc;
                         if (fechaFact) {
                             hasValidDates = true;
                             if (fechaFact.getMonth() === targetMonth && fechaFact.getFullYear() === targetYear) {
@@ -1321,7 +1347,7 @@ function handleFile(file) {
             const limitDate = new Date(); limitDate.setDate(limitDate.getDate() - 90);
             const skuMaxDate = new Map();
             selectedClient.rawItems.forEach(item => {
-                const sku = getSku(item), d = parseDate(item.fecha || item.fechafactura);
+                const sku = getSku(item), d = item.fecha_doc;
                 if (d && (!skuMaxDate.has(sku) || d > skuMaxDate.get(sku))) skuMaxDate.set(sku, d);
             });
             const inactiveSkus = [];
@@ -1373,7 +1399,7 @@ function handleFile(file) {
                 <div class="client-header-card">
                     <div class="flex-grow">
                         <div class="text-[8px] font-black tracking-widest opacity-60 uppercase mb-0.5">Análisis Comercial Estructurado</div>
-                        <div class="neon-client-name uppercase">${selectedClient.id} - ${selectedClient.name}</div>
+                        <div class="neon-client-name uppercase">${selectedClient.cliVendId || selectedClient.id} - ${selectedClient.name}</div>
                         <div class="text-[8.5px] font-bold text-slate-200 mt-1.5 uppercase flex items-center gap-2">Estrategia: <span class="strategy-badge">${currentStrategyLabel}</span></div>
                     </div>
                     <div class="header-divider"></div>
@@ -1399,12 +1425,12 @@ function handleFile(file) {
                 
                 const historyRecords = selectedClient.rawItems.filter(raw => getSku(raw) === skuCode);
                 let uFecha = "SIN REGISTRO", uPrecio = 0;
-                let fechasValidas = historyRecords.map(r => parseDate(r.fecha || r.fechafactura)).filter(Boolean);
+                let fechasValidas = historyRecords.map(r => r.fecha_doc).filter(Boolean);
                 if(fechasValidas.length > 0) uFecha = new Date(Math.max(...fechasValidas)).toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 
-                let sortedHistory = [...historyRecords].sort((a,b)=> (parseDate(a.fecha)||0) - (parseDate(b.fecha)||0));
+                let sortedHistory = [...historyRecords].sort((a,b)=> (a.fecha_doc||0) - (b.fecha_doc||0));
                 for (let k = sortedHistory.length - 1; k >= 0; k--) {
-                    let pz = parseMoney(sortedHistory[k]['venta en piezas'] || sortedHistory[k]['ventaenpiezas'] || sortedHistory[k]['piezas'] || sortedHistory[k]['cantidad']), mn = sortedHistory[k]._vmn_calculado;
+                    let pz = sortedHistory[k]._venta_piezas_calculada, mn = sortedHistory[k]._vmn_calculado;
                     if (pz > 0) { uPrecio = mn / pz; break; }
                 }
 
@@ -1480,7 +1506,7 @@ function handleFile(file) {
         let lowest = null;
         if (clientObj && clientObj.rawItems) {
             clientObj.rawItems.filter(raw => getSku(raw) === sku).forEach(r => {
-                let pz = parseMoney(r['venta en piezas'] || r['ventaenpiezas'] || r['piezas'] || r['cantidad']), mn = r._vmn_calculado;
+                let pz = r._venta_piezas_calculada, mn = r._vmn_calculado;
                 if (pz > 0 && mn > 0 && (lowest === null || (mn / pz) < lowest)) lowest = mn / pz;
             });
         }
