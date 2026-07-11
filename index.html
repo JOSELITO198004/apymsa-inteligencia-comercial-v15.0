@@ -778,15 +778,30 @@
             const sku = getSku(item);
             if (!sku) return;
 
-            let tempPromoVal = parseMoney(item["precio solicitado"] || item["preciosolicitado"] || 0);
-            let tempPromoComment = "";
-            let val = String(item["comentario"] || "").trim();
-            if (val && val !== "0" && val.toLowerCase() !== "null" && val.toLowerCase() !== "undefined" && val.toLowerCase() !== "na" && val.toLowerCase() !== "n/a") {
-                tempPromoComment = val;
-            }
+            // Promociones: reconoce precio, tipo de promocion y comentario.
+            const tempPromoVal = parseMoney(
+                item["precio solicitado"] || item["preciosolicitado"] ||
+                item["precio promocion"] || item["preciopromocion"] ||
+                item["precio promo"] || item["preciopromo"] || 0
+            );
+            const rawPromoText = String(
+                item["tipo promocion"] || item["tipopromocion"] ||
+                item["promocion"] || item["promo"] || ""
+            ).trim();
+            const rawComment = String(
+                item["comentario"] || item["comentario promocion"] ||
+                item["comentariopromocion"] || ""
+            ).trim();
+            const isValidPromoText = value => {
+                const normalized = String(value || "").trim().toLowerCase();
+                return normalized && !["0", "null", "undefined", "na", "n/a"].includes(normalized);
+            };
+            const tempPromoText = isValidPromoText(rawPromoText) ? rawPromoText : "";
+            const tempPromoComment = isValidPromoText(rawComment) ? rawComment : "";
 
-            if (tempPromoVal > 0 && (!globalPromociones[sku] || globalPromociones[sku] === 0)) globalPromociones[sku] = tempPromoVal;
-            if (tempPromoComment && !globalComentarioPromo[sku]) globalComentarioPromo[sku] = tempPromoComment;
+            if (tempPromoVal > 0) globalPromociones[sku] = tempPromoVal;
+            if (tempPromoText) globalPromoText[sku] = tempPromoText;
+            if (tempPromoComment) globalComentarioPromo[sku] = tempPromoComment;
 
             globalProducts.set(sku, item);
         });
@@ -1362,7 +1377,11 @@
         } else if (strategyType === 'tipoPromocion') {
             const selectedPromo = document.getElementById('promo-selector').value; if (!selectedPromo) { showAlert("SELECCIONA UNA PROMO."); return; }
             currentStrategyLabel = `Promoción: ${selectedPromo}`;
-            targetProducts = Array.from(globalProducts.keys()).filter(sku => (globalComentarioPromo[sku] || globalPromoText[sku]) === selectedPromo).sort((a,b)=>(globalSalesPesos[b]||0)-(globalSalesPesos[a]||0)).map(sku => globalProducts.get(sku)).filter(Boolean);
+            const selectedPromoNorm = normalizeBrandName(selectedPromo);
+            targetProducts = Array.from(globalProducts.keys())
+                .filter(sku => normalizeBrandName(globalPromoText[sku] || globalComentarioPromo[sku] || "") === selectedPromoNorm)
+                .sort((a,b)=>(globalSalesPesos[b]||0)-(globalSalesPesos[a]||0))
+                .map(sku => globalProducts.get(sku)).filter(Boolean);
         } else if (strategyType === 'topMarca') {
             currentStrategyLabel = "Top Marcas Propias";
             targetProducts = sortedGlobalSkusPesos.map(sku => globalProducts.get(sku)).filter(item => item && marcasPropias.map(b=>b.toUpperCase()).includes(normalizeBrandName(getBrand(item)))).slice(0, 50);
@@ -1444,7 +1463,7 @@
                     promoFinal = (!isNaN(pureNum) && pureNum > 0 && !globalPromoText[skuCode].toLowerCase().includes('x')) ? moneyFmt.format(pureNum) : globalPromoText[skuCode];
                 }
 
-                let nombrePromo = globalComentarioPromo[skuCode] ? globalComentarioPromo[skuCode].toUpperCase() : "";
+                let nombrePromo = (globalPromoText[skuCode] || globalComentarioPromo[skuCode] || "").toUpperCase();
                 let promoHtml = "";
                 if (nombrePromo || (promoFinal && promoFinal !== "0" && promoFinal !== "$0.00")) {
                     let tagLabel = nombrePromo ? `🔥 ${nombrePromo}` : "🔥 PROMOCIÓN", tagValue = (promoFinal && promoFinal !== "0" && promoFinal !== "$0.00") ? promoFinal : "";
@@ -1570,8 +1589,12 @@
 
         const pSel = document.getElementById('promo-selector');
         if (pSel) {
-            const uniquePromos = new Set(); Array.from(globalProducts.keys()).forEach(sku => { let p = globalComentarioPromo[sku] || (globalPromoText[sku] && globalPromoText[sku] !== "0" ? globalPromoText[sku] : null); if (p) uniquePromos.add(p); });
-            pSel.innerHTML = '<option value="">Seleccionar promo...</option>'; [...uniquePromos].sort().forEach(p => { const opt = document.createElement('option'); opt.value = p; opt.innerText = p.toUpperCase(); pSel.appendChild(opt); });
+            const uniquePromos = new Map();
+            Array.from(globalProducts.keys()).forEach(sku => {
+                const p = globalPromoText[sku] || globalComentarioPromo[sku] || null;
+                if (p) uniquePromos.set(normalizeBrandName(p), p);
+            });
+            pSel.innerHTML = '<option value="">Seleccionar promo...</option>'; [...uniquePromos.values()].sort((a,b)=>a.localeCompare(b, 'es')).forEach(p => { const opt = document.createElement('option'); opt.value = p; opt.innerText = p.toUpperCase(); pSel.appendChild(opt); });
         }
 
         const ySel = document.getElementById('sku-year-selector');
