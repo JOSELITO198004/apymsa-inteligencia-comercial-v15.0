@@ -265,7 +265,7 @@
                         <option value="global">Top Global (Todos)</option>
                     </select>
                 </div>
-                <p class="text-slate-400 text-[10px] font-bold uppercase mb-4">Filtra los 50 códigos más vendidos basados en la selección de fecha.</p>
+                <p class="text-slate-400 text-[10px] font-bold uppercase mb-4">Filtra hasta 50 códigos más vendidos basados en la selección de fecha.</p>
                 <button onclick="generateCatalogByStrategy('skuPorMes')" class="w-full bg-[#0f172a] hover:bg-[#00f3ff] hover:text-black border border-neon-cyan text-neon-cyan py-3 rounded-xl text-[11px] font-black uppercase shadow-[0_0_15px_rgba(0,243,255,0.2)] transition-all">Generar Reporte</button>
             </div>
 
@@ -285,7 +285,7 @@
             <button onclick="generateCatalogByStrategy('topGlobal')" class="strategy-card">
                 <div class="text-4xl mb-4">📈</div>
                 <h3 class="text-white font-black text-xl uppercase mb-3">Top <span class="text-neon-green">Global</span></h3>
-                <p class="text-slate-400 text-[10px] font-bold uppercase leading-relaxed">Los 50 códigos más vendidos globalmente basados en el total de Venta Neta global.</p>
+                <p class="text-slate-400 text-[10px] font-bold uppercase leading-relaxed">Hasta 50 códigos más vendidos globalmente basados en el total de Venta Neta global.</p>
             </button>
 
             <div class="strategy-card">
@@ -294,6 +294,7 @@
                 <select id="promo-selector" class="w-full bg-[#030712] border border-slate-500 text-white rounded-xl p-3 text-[10px] font-black uppercase outline-none mb-4 shadow-inner">
                     <option value="">Seleccionar promo...</option>
                 </select>
+                <p class="text-slate-400 text-[9px] font-bold uppercase mb-4">Incluye todos los códigos de la promoción, ordenados de mayor a menor venta.</p>
                 <button onclick="generateCatalogByStrategy('tipoPromocion')" class="w-full bg-[#0f172a] hover:bg-[#ffbb00] hover:text-black border border-neon-orange text-neon-orange py-3 rounded-xl text-[11px] font-black uppercase shadow-[0_0_15px_rgba(255,187,0,0.2)]">Generar Catálogo</button>
             </div>
 
@@ -1309,8 +1310,10 @@
     function generateCatalogByStrategy(strategyType) {
         if (!selectedClient) { showAlert("No hay cliente seleccionado."); return; }
         let targetProducts = [];
-        const sortedGlobalSkusMn = Object.keys(globalSalesMn).sort((a, b) => globalSalesMn[b] - globalSalesMn[a]);
-        const sortedGlobalSkusPesos = Object.keys(globalSalesPesos).sort((a, b) => globalSalesPesos[b] - globalSalesPesos[a]);
+        // Regla general: las estrategias automáticas se ordenan de mayor a menor venta.
+        // Tipo Promoción incluye todos los códigos; las demás estrategias tienen un máximo de 50.
+        const sortedGlobalSkusMn = Object.keys(globalSalesMn).sort((a, b) => (globalSalesMn[b] || 0) - (globalSalesMn[a] || 0));
+        const sortedGlobalSkusPesos = Object.keys(globalSalesPesos).sort((a, b) => (globalSalesPesos[b] || 0) - (globalSalesPesos[a] || 0));
         
         if (strategyType === 'manual') {
             if (manualSkus.length === 0) { showAlert("No has capturado ningún código."); return; }
@@ -1359,7 +1362,7 @@
         } else if (strategyType === 'tipoPromocion') {
             const selectedPromo = document.getElementById('promo-selector').value; if (!selectedPromo) { showAlert("SELECCIONA UNA PROMO."); return; }
             currentStrategyLabel = `Promoción: ${selectedPromo}`;
-            targetProducts = Array.from(globalProducts.keys()).filter(sku => (globalComentarioPromo[sku] || globalPromoText[sku]) === selectedPromo).sort((a,b)=>(globalSalesPesos[b]||0)-(globalSalesPesos[a]||0)).slice(0, 50).map(sku => globalProducts.get(sku)).filter(Boolean);
+            targetProducts = Array.from(globalProducts.keys()).filter(sku => (globalComentarioPromo[sku] || globalPromoText[sku]) === selectedPromo).sort((a,b)=>(globalSalesPesos[b]||0)-(globalSalesPesos[a]||0)).map(sku => globalProducts.get(sku)).filter(Boolean);
         } else if (strategyType === 'topMarca') {
             currentStrategyLabel = "Top Marcas Propias";
             targetProducts = sortedGlobalSkusPesos.map(sku => globalProducts.get(sku)).filter(item => item && marcasPropias.map(b=>b.toUpperCase()).includes(normalizeBrandName(getBrand(item)))).slice(0, 50);
