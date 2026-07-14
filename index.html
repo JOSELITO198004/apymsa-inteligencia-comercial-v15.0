@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <title>Inteligencia Comercial APYMSA V15.9</title>
-    <meta property="og:title" content="Inteligencia Comercial APYMSA V15.9">
+    <title>Inteligencia Comercial APYMSA V16.0</title>
+    <meta property="og:title" content="Inteligencia Comercial APYMSA V16.0">
     <meta property="og:description" content="Reporte de Inteligencia Comercial (ICA)">
     <meta property="og:image" content="https://placehold.co/600x400/030712/00f3ff/png?text=ICA&font=Montserrat">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23030712%22/><text x=%2250%22 y=%2255%22 font-family=%22Arial%22 font-size=%2245%22 font-weight=%22bold%22 fill=%22%2300f3ff%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22>ICA</text></svg>">
@@ -117,7 +117,7 @@
             </div>
             <div>
                 <h1 class="text-xl font-black italic tracking-tighter uppercase leading-none text-white">
-                    Inteligencia <span class="text-neon-cyan">Comercial V15.9</span>
+                    Inteligencia <span class="text-neon-cyan">Comercial V16.0</span>
                 </h1>
                 <p id="header-date-text" class="text-[9px] text-neon-cyan font-bold uppercase tracking-[0.2em] mt-1 opacity-80">
                     Calculando mes... • Radiografía comercial
@@ -155,7 +155,7 @@
                 <div class="w-10 h-10 border-4 border-[#00f3ff]/20 border-t-[#00f3ff] rounded-full animate-spin mb-3"></div>
                 <span class="text-xs font-bold text-neon-cyan uppercase tracking-widest animate-pulse" id="loader-text">Procesando Base de Datos Estructurada...</span>
             </div>
-            <h2 class="text-3xl font-black text-white mb-2 tracking-tight">INTELIGENCIA COMERCIAL <span class="text-neon-cyan">V15.9</span></h2>
+            <h2 class="text-3xl font-black text-white mb-2 tracking-tight">INTELIGENCIA COMERCIAL <span class="text-neon-cyan">V16.0</span></h2>
             <p class="text-slate-400 mb-8 text-sm font-medium">Selecciona el archivo local <span class="font-bold text-white">JSON.GZ</span> con Productos, Clientes, Jerarquía y Ventas.</p>
             
             <div class="flex flex-col md:flex-row gap-4 justify-center relative z-10">
@@ -232,6 +232,18 @@
             <h2 id="strategy-client-name" class="text-4xl font-black text-white uppercase leading-tight tracking-tighter"></h2>
             <div class="bg-black/40 inline-block px-4 py-2 rounded-lg border border-white/5 mt-4">
                 <p id="strategy-client-meta" class="text-slate-300 text-xs font-bold uppercase tracking-wider"></p>
+            </div>
+            <div class="mt-5 max-w-md">
+                <label for="strategy-opportunity-filter" class="block text-[10px] text-neon-cyan font-black uppercase tracking-widest mb-2">
+                    Filtro de códigos para las estrategias
+                </label>
+                <select id="strategy-opportunity-filter" class="w-full bg-[#001233] border border-[#00f3ff]/40 text-white rounded-xl p-3 text-[10px] font-black uppercase outline-none shadow-[inset_0_0_10px_rgba(0,243,255,0.1)] focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan">
+                    <option value="all">Generar todos los códigos</option>
+                    <option value="new">Sólo códigos de nueva oportunidad</option>
+                </select>
+                <p class="text-slate-500 text-[9px] font-bold uppercase mt-2 leading-relaxed">
+                    Nueva oportunidad: códigos que el cliente seleccionado nunca ha comprado.
+                </p>
             </div>
         </div>
 
@@ -1322,6 +1334,25 @@
         generateCatalogByStrategy('manual');
     }
 
+    function hasClientPurchasedSku(sku, clientObj) {
+        if (!clientObj || !Array.isArray(clientObj.rawItems)) return false;
+        const normalizedSku = String(sku || "").trim().toUpperCase();
+        return clientObj.rawItems.some(item => getSku(item).toUpperCase() === normalizedSku);
+    }
+
+    function applyStrategyOpportunityFilter(products) {
+        const selector = document.getElementById('strategy-opportunity-filter');
+        const mode = selector ? selector.value : 'all';
+        if (mode !== 'new') return products;
+        return products.filter(product => !hasClientPurchasedSku(getSku(product), selectedClient));
+    }
+
+    function sortProductsBySkuDescending(products) {
+        return [...products].sort((a, b) =>
+            getSku(b).localeCompare(getSku(a), 'es', { numeric: true, sensitivity: 'base' })
+        );
+    }
+
     function generateCatalogByStrategy(strategyType) {
         if (!selectedClient) { showAlert("No hay cliente seleccionado."); return; }
         let targetProducts = [];
@@ -1404,7 +1435,20 @@
             targetProducts = sortedGlobalSkusPesos.map(sku => globalProducts.get(sku)).filter(item => item && normalizeBrandName(getTipoServicio(item)) === normalizeBrandName(selectedServicio) && (!selectedFamilia || normalizeBrandName(getFamily(item)) === normalizeBrandName(selectedFamilia))).slice(0, 50);
         }
 
-        if (targetProducts.length === 0) { showAlert("NO SE ENCONTRARON CÓDIGOS PARA ESTA ESTRATEGIA."); return; }
+        // Filtro universal: todos los códigos o únicamente nuevas oportunidades.
+        targetProducts = applyStrategyOpportunityFilter(targetProducts);
+
+        // Orden universal para todos los reportes: código de mayor a menor.
+        targetProducts = sortProductsBySkuDescending(targetProducts);
+
+        if (targetProducts.length === 0) {
+            const opportunityMode = document.getElementById('strategy-opportunity-filter')?.value || 'all';
+            const message = opportunityMode === 'new'
+                ? "NO SE ENCONTRARON CÓDIGOS DE NUEVA OPORTUNIDAD PARA ESTA ESTRATEGIA."
+                : "NO SE ENCONTRARON CÓDIGOS PARA ESTA ESTRATEGIA.";
+            showAlert(message);
+            return;
+        }
         renderCatalog(targetProducts);
     }
 
