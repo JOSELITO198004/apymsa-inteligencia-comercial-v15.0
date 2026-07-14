@@ -1,0 +1,1667 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Inteligencia Comercial APYMSA V16.0</title>
+    <meta property="og:title" content="Inteligencia Comercial APYMSA V16.0">
+    <meta property="og:description" content="Reporte de Inteligencia Comercial (ICA)">
+    <meta property="og:image" content="https://placehold.co/600x400/030712/00f3ff/png?text=ICA&font=Montserrat">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23030712%22/><text x=%2250%22 y=%2255%22 font-family=%22Arial%22 font-size=%2245%22 font-weight=%22bold%22 fill=%22%2300f3ff%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22>ICA</text></svg>">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --neon-red: #ff004c;
+            --neon-red-glow: rgba(255, 0, 76, 0.6);
+            --neon-cyan: #00f3ff;
+            --neon-cyan-glow: rgba(0, 243, 255, 0.6);
+            --neon-green: #00ff66;
+            --neon-green-glow: rgba(0, 255, 102, 0.6);
+            --neon-orange: #ffbb00;
+            --dark-bg: #030712; 
+            --panel-bg: rgba(17, 24, 39, 0.7); 
+            --page-width: 210mm;
+            --page-height: 297mm;
+        }
+
+        body { font-family: 'Montserrat', sans-serif; background-color: var(--dark-bg); background-image: radial-gradient(circle at 15% 50%, rgba(255, 0, 76, 0.08), transparent 25%), radial-gradient(circle at 85% 30%, rgba(0, 243, 255, 0.08), transparent 25%), linear-gradient(to bottom, #050b14, #010308); background-attachment: fixed; margin: 0; padding: 0; color: #f8fafc; -webkit-print-color-adjust: exact; print-color-adjust: exact; user-select: none; }
+        input, select, textarea { -webkit-user-select: auto; -moz-user-select: auto; -ms-user-select: auto; user-select: auto; }
+
+        .text-neon-cyan { color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan-glow); }
+        .text-neon-red { color: var(--neon-red); text-shadow: 0 0 10px var(--neon-red-glow); }
+        .text-neon-green { color: var(--neon-green); text-shadow: 0 0 10px var(--neon-green-glow); }
+        .border-neon-cyan { border-color: var(--neon-cyan); box-shadow: 0 0 15px rgba(0, 243, 255, 0.2), inset 0 0 10px rgba(0, 243, 255, 0.1); }
+        .border-neon-red { border-color: var(--neon-red); box-shadow: 0 0 15px rgba(255, 0, 76, 0.2), inset 0 0 10px rgba(255, 0, 76, 0.1); }
+        .bg-neon-cyan { background-color: var(--neon-cyan); }
+        .bg-neon-green { background-color: var(--neon-green); }
+        .bg-glass { background: var(--panel-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.05); }
+
+        @media print {
+            @page { size: A4 portrait; margin: 0; }
+            html, body { background: white !important; overflow: visible !important; height: auto !important; margin: 0 !important; padding: 0 !important; }
+            main, #main-content, #catalog-container { display: block !important; margin: 0 !important; padding: 0 !important; min-height: 0 !important; padding-bottom: 0 !important; }
+            .no-print { display: none !important; }
+            .page-sheet { width: var(--page-width) !important; height: var(--page-height) !important; margin: 0 !important; border: none !important; box-shadow: none !important; page-break-after: always !important; break-after: page !important; padding: 8mm 12mm !important; display: flex !important; flex-direction: column !important; position: relative !important; box-sizing: border-box !important; overflow: hidden !important; background: white !important; }
+            .page-sheet:last-of-type { page-break-after: auto !important; break-after: auto !important; }
+            .client-header-card { background: #001233 !important; color: #ffffff !important; box-shadow: none !important; border-color: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
+        }
+
+        .page-sheet { background: white; box-shadow: 0 10px 40px rgba(0,243,255,0.15); margin: 20px auto; width: var(--page-width); height: var(--page-height); padding: 8mm 12mm; display: flex; flex-direction: column; position: relative; box-sizing: border-box; border-radius: 8px; }
+        .client-header-card { background: linear-gradient(135deg, #001833 0%, #000d1a 100%); border-radius: 14px; padding: 5mm 6mm; display: flex; align-items: center; justify-content: space-between; border: 2px solid var(--neon-cyan); box-shadow: 0 0 20px rgba(0, 243, 255, 0.2); margin-bottom: 5mm; position: relative; color: #ffffff; }
+
+        .strategy-badge { background: rgba(0, 243, 255, 0.1); color: var(--neon-cyan); font-size: 8px; font-weight: 900; letter-spacing: 0.1em; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; display: inline-block; border: 1px solid var(--neon-cyan); box-shadow: 0 0 8px rgba(0, 243, 255, 0.4); }
+        .neon-client-name { color: #ffffff; font-weight: 900; font-size: 18px; letter-spacing: -0.02em; text-shadow: 0 0 10px rgba(255, 255, 255, 0.4); line-height: 1.2; }
+        .header-divider { width: 1px; height: 48px; background: rgba(255, 255, 255, 0.15); margin: 0 15px; }
+        .lbl-secundario { font-size: 8px; font-weight: 800; color: #cbd5e1; letter-spacing: 0.08em; text-transform: uppercase; line-height: 1.1; }
+        .status-text-red { color: var(--neon-red); text-shadow: 0 0 10px var(--neon-red-glow); }
+        .status-text-orange { color: var(--neon-orange); text-shadow: 0 0 10px rgba(255, 187, 0, 0.6); }
+        .status-text-green { color: var(--neon-green); text-shadow: 0 0 10px var(--neon-green-glow); }
+
+        .pag-badge { border: 1px solid var(--neon-cyan); background: rgba(0, 243, 255, 0.1); border-radius: 20px; padding: 6px 12px; font-size: 9px; font-weight: 800; color: var(--neon-cyan); text-align: center; box-shadow: 0 0 10px rgba(0, 243, 255, 0.2); }
+
+        .grid-container { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 3mm; flex-grow: 1; }
+
+        .card { border: 1px solid #e2e8f0; height: 75mm; display: flex; flex-direction: column; padding: 3mm; position: relative; background: #fff; border-radius: 8px; box-sizing: border-box; overflow: hidden; }
+        .card.selected { border: 2px solid var(--neon-green); box-shadow: 0 0 20px rgba(0, 255, 102, 0.2); }
+        .card.selected::after { content: '✓ SELECCIONADO'; position: absolute; top: 15px; right: -35px; background: var(--neon-green); color: white; font-size: 8px; font-weight: 900; padding: 4px 35px; transform: rotate(45deg); z-index: 10; box-shadow: 0 0 10px rgba(0,255,102,0.5); }
+
+        .sku-badge { background: #001233; color: #ffffff; padding: 3px 8px; border-radius: 4px; font-size: 13px; font-weight: 900; border: 1px solid #001233; display: inline-block; }
+        .card-img-container { width: 100%; height: 30mm; display: flex; align-items: center; justify-content: center; margin: 1mm 0; overflow: hidden; }
+        .card-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .card-title { font-size: 8.5px; font-weight: 800; color: #0f172a; line-height: 1.2; height: 2.4em; overflow: hidden; text-transform: uppercase; margin-bottom: 1.5mm; }
+        .spec-tag { font-size: 5.8px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 2px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; gap: 4px; }
+        .spec-value { color: #1e293b; font-weight: 800; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 65%; }
+
+        .traffic-light { width: 14px; height: 14px; border-radius: 50%; display: inline-block; }
+        .glow-red { background: var(--neon-red) !important; box-shadow: 0 0 15px var(--neon-red); }
+        .glow-orange { background: var(--neon-orange) !important; box-shadow: 0 0 15px var(--neon-orange); }
+        .glow-green { background: var(--neon-green) !important; box-shadow: 0 0 15px var(--neon-green); }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--neon-cyan); border-radius: 10px; box-shadow: inset 0 0 6px rgba(0,0,0,0.5); }
+
+        .strategy-card { background: rgba(10, 15, 30, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(0, 243, 255, 0.1); border-radius: 20px; padding: 24px; text-align: left; transition: all .3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; width: 100%; position: relative; overflow: hidden; }
+        .strategy-card::before { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(to right, transparent, rgba(0, 243, 255, 0.1), transparent); transform: skewX(-25deg); transition: 0.5s; }
+        .strategy-card:hover::before { left: 150%; }
+        .strategy-card:hover { border-color: var(--neon-cyan); box-shadow: 0 0 25px rgba(0, 243, 255, 0.2), inset 0 0 10px rgba(0, 243, 255, 0.05); transform: translateY(-4px); background: rgba(10, 15, 30, 0.9); }
+
+        .advisor-card-btn { cursor: pointer; transition: all 0.3s ease-in-out; background: linear-gradient(145deg, rgba(15,23,42,0.8) 0%, rgba(5,10,20,0.9) 100%); }
+        .advisor-card-btn:hover { transform: scale(1.03); border-color: var(--neon-cyan) !important; box-shadow: 0 0 30px rgba(0, 243, 255, 0.25); }
+
+        .cart-bar { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: rgba(3, 7, 18, 0.95); backdrop-filter: blur(20px); border: 1px solid var(--neon-green); box-shadow: 0 0 30px rgba(0, 255, 102, 0.2); padding: 15px 30px; border-radius: 50px; display: flex; align-items: center; gap: 30px; transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 100; }
+        .cart-bar.visible { bottom: 30px; }
+        
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+    </style>
+</head>
+
+<body>
+
+<header class="no-print bg-glass border-b border-neon-cyan sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 p-4">
+        <div class="flex items-center gap-4">
+            <div class="bg-white p-2 rounded-lg shadow-[0_0_15px_rgba(255,255,255,0.8)]">
+                <span class="text-[#001233] font-black italic text-2xl">APYMSA</span>
+            </div>
+            <div>
+                <h1 class="text-xl font-black italic tracking-tighter uppercase leading-none text-white">
+                    Inteligencia <span class="text-neon-cyan">Comercial V16.0</span>
+                </h1>
+                <p id="header-date-text" class="text-[9px] text-neon-cyan font-bold uppercase tracking-[0.2em] mt-1 opacity-80">
+                    Calculando mes... • Radiografía comercial
+                </p>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-center gap-3">
+            <input type="file" id="dataFile" accept=".json.gz,.gz,application/gzip" class="hidden">
+            <button id="btnFullScreen" onclick="toggleFullScreen()" class="bg-[#0f172a] hover:bg-[#1e293b] px-4 py-2 rounded-lg text-[10px] font-bold border border-slate-500 text-white flex items-center gap-2 shadow-lg">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l-5 5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+                <span id="fs-text" class="uppercase">Pantalla Completa</span>
+            </button>
+            <button onclick="clearCacheAndReload()" class="bg-[#0f172a] hover:bg-[#ff004c] hover:text-black px-4 py-2 rounded-lg text-[10px] font-bold transition-all border border-[#ff004c] text-white shadow-[0_0_15px_rgba(255,0,76,0.2)]">RECARGAR APLICACIÓN</button>
+            <button id="btnBack" onclick="backToSelection()" class="hidden bg-[#0f172a] hover:bg-[#ff004c] hover:text-black text-[#ff004c] px-4 py-2 rounded-lg text-[10px] font-bold transition-all border border-[#ff004c] uppercase shadow-[0_0_15px_rgba(255,0,76,0.3)]">← Regresar</button>
+            <button onclick="window.print()" id="btnPrint" class="bg-gradient-to-r from-[#00f3ff] to-[#00b3ff] text-black hover:scale-105 px-8 py-2 rounded-lg font-black text-[10px] uppercase shadow-[0_0_25px_rgba(0,243,255,0.6)] disabled:opacity-30 disabled:hover:scale-100 transition-all" disabled>Imprimir Reporte</button>
+        </div>
+    </div>
+</header>
+
+<main id="main-content" class="min-h-[calc(100vh-80px)] flex flex-col items-center p-6 relative">
+
+    <div id="alert-box" class="hidden fixed top-24 right-6 z-[60] bg-glass border-l-4 border-neon-red shadow-[0_0_30px_rgba(255,0,76,0.3)] p-4 rounded-lg max-w-sm">
+        <div class="flex items-center gap-3">
+            <div class="bg-[#ff004c]/20 text-[#ff004c] p-2 rounded-full font-bold w-8 h-8 flex items-center justify-center border border-[#ff004c]/50">!</div>
+            <p id="alert-msg" class="text-xs font-bold text-white uppercase break-words"></p>
+        </div>
+    </div>
+
+    <div id="step-1" class="no-print w-full max-w-5xl bg-glass rounded-3xl shadow-[0_0_50px_rgba(0,243,255,0.05)] p-10 border border-white/10 mt-6 flex flex-col items-center">
+        <div id="drop-zone" class="w-full bg-black/50 rounded-2xl border-2 border-dashed border-[#00f3ff]/40 cursor-pointer hover:bg-[#00f3ff]/5 transition-all p-12 text-center group mb-8 relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-b from-[#00f3ff]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div id="load-icon" class="bg-[#00f3ff]/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform"><svg class="w-10 h-10 text-neon-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg></div>
+            <div id="loader-spinner" class="hidden mb-6 flex flex-col items-center">
+                <div class="w-10 h-10 border-4 border-[#00f3ff]/20 border-t-[#00f3ff] rounded-full animate-spin mb-3"></div>
+                <span class="text-xs font-bold text-neon-cyan uppercase tracking-widest animate-pulse" id="loader-text">Procesando Base de Datos Estructurada...</span>
+            </div>
+            <h2 class="text-3xl font-black text-white mb-2 tracking-tight">INTELIGENCIA COMERCIAL <span class="text-neon-cyan">V16.0</span></h2>
+            <p class="text-slate-400 mb-8 text-sm font-medium">Selecciona el archivo local <span class="font-bold text-white">JSON.GZ</span> con Productos, Clientes, Jerarquía y Ventas.</p>
+            
+            <div class="flex flex-col md:flex-row gap-4 justify-center relative z-10">
+                <button type="button" id="btnSelectFile" class="bg-gradient-to-r from-[#ff004c] to-[#cc003d] text-white px-8 py-3.5 rounded-full text-[11px] font-black uppercase tracking-widest shadow-lg hover:scale-105 transition-transform">Archivo Local (JSON.GZ)</button>
+                <button type="button" id="btnLoadCloud" class="bg-gradient-to-r from-[#00f3ff] to-[#008cff] text-black px-8 py-3.5 rounded-full text-[11px] font-black uppercase tracking-widest shadow-lg hover:scale-105 transition-transform">Cargar de la Nube</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="step-2" class="no-print w-full max-w-6xl bg-glass rounded-3xl shadow-2xl p-10 hidden border border-white/10">
+        <div id="regional-view">
+            <div class="mb-8 border-b border-white/10 pb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+                <div>
+                    <h2 class="text-4xl font-black text-white tracking-tight">Directorio de <span class="text-neon-cyan">Regiones</span></h2>
+                    <p class="text-neon-red text-sm mt-2 uppercase font-bold tracking-wider">Selecciona una región para ver asesores</p>
+                </div>
+                <div id="summary-count" class="text-[11px] font-black uppercase text-neon-cyan bg-black/50 px-5 py-2.5 rounded-xl border border-[#00f3ff]/30 shadow-[0_0_15px_rgba(0,243,255,0.15)]"></div>
+            </div>
+            <div id="regional-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-4"></div>
+        </div>
+
+        <div id="advisor-view" class="hidden">
+            <div class="mb-8 border-b border-white/10 pb-6 flex flex-col gap-4">
+                <div class="flex items-center gap-5">
+                    <button onclick="backToRegionals()" class="bg-[#0f172a] hover:bg-[#00f3ff] hover:text-black text-neon-cyan border border-neon-cyan px-5 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all shadow-[0_0_15px_rgba(0,243,255,0.3)]">← Regiones</button>
+                    <div>
+                        <h2 class="text-3xl font-black text-white uppercase tracking-tight" id="current-regional-title"></h2>
+                        <p class="text-neon-red text-xs mt-1 uppercase font-bold tracking-widest">Asesores en la región</p>
+                    </div>
+                </div>
+            </div>
+            <div id="advisor-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-4"></div>
+        </div>
+
+        <div id="client-view" class="hidden">
+            <div class="mb-8 border-b border-white/10 pb-6 flex flex-col gap-4">
+                <div class="flex flex-col md:flex-row items-center gap-5 justify-between w-full">
+                    <div class="flex items-center gap-5 w-full md:w-auto">
+                        <button onclick="backToAdvisors()" class="bg-[#0f172a] hover:bg-[#00f3ff] hover:text-black text-neon-cyan border border-neon-cyan px-5 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all shadow-[0_0_15px_rgba(0,243,255,0.3)] whitespace-nowrap">← Asesores</button>
+                        <div>
+                            <h2 class="text-3xl font-black text-white uppercase tracking-tight" id="current-advisor-title"></h2>
+                            <p class="text-neon-red text-xs mt-1 uppercase font-bold tracking-widest">Panel del Asesor</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-2 w-full md:w-auto mt-4 md:mt-0">
+                        <button id="tab-clientes" onclick="switchTab('clientes')" class="flex-1 md:flex-none bg-[#00f3ff] text-black border border-neon-cyan px-6 py-3 rounded-xl text-[11px] font-black uppercase transition-all shadow-[0_0_15px_rgba(0,243,255,0.3)]">Cartera de Clientes</button>
+                        <button id="tab-bonos" onclick="switchTab('bonos')" class="flex-1 md:flex-none bg-[#0f172a] hover:bg-[#ffbb00] hover:text-black text-neon-orange border border-neon-orange px-6 py-3 rounded-xl text-[11px] font-black uppercase transition-all shadow-[0_0_15px_rgba(255,187,0,0.3)]">Bonos Semanales</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-content-clientes">
+                <div class="relative mb-8">
+                    <input type="text" id="clientSearch" placeholder="Buscar cliente por ID o Razón Social..." class="w-full p-5 pl-14 bg-black/60 border-2 border-white/10 rounded-2xl focus:border-neon-cyan outline-none font-bold text-white transition-all text-lg">
+                    <svg class="w-6 h-6 text-neon-cyan absolute left-5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <div id="client-list" class="max-h-[500px] overflow-y-auto space-y-4 pr-4 custom-scrollbar"></div>
+            </div>
+
+            <div id="tab-content-bonos" class="hidden">
+                <div class="mb-4">
+                    <p class="text-slate-400 text-sm font-bold uppercase tracking-wider">Tu esfuerzo, tu recompensa:</p>
+                    <h3 class="text-2xl font-black text-neon-orange uppercase">Bonos Semanales - Julio 2026</h3>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="bonus-cards-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="step-strategy" class="no-print w-full max-w-6xl bg-glass rounded-3xl shadow-2xl p-10 hidden border border-[#ff004c]/30">
+        <div class="mb-8 border-b border-white/10 pb-6">
+            <p class="text-neon-cyan text-[11px] font-black uppercase tracking-[0.3em] mb-2">Análisis de Cliente</p>
+            <h2 id="strategy-client-name" class="text-4xl font-black text-white uppercase leading-tight tracking-tighter"></h2>
+            <div class="bg-black/40 inline-block px-4 py-2 rounded-lg border border-white/5 mt-4">
+                <p id="strategy-client-meta" class="text-slate-300 text-xs font-bold uppercase tracking-wider"></p>
+            </div>
+            <div class="mt-5 max-w-md">
+                <label for="strategy-opportunity-filter" class="block text-[10px] text-neon-cyan font-black uppercase tracking-widest mb-2">
+                    Filtro de códigos para las estrategias
+                </label>
+                <select id="strategy-opportunity-filter" class="w-full bg-[#001233] border border-[#00f3ff]/40 text-white rounded-xl p-3 text-[10px] font-black uppercase outline-none shadow-[inset_0_0_10px_rgba(0,243,255,0.1)] focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan">
+                    <option value="all">Generar todos los códigos</option>
+                    <option value="new">Sólo códigos de nueva oportunidad</option>
+                </select>
+                <p class="text-slate-500 text-[9px] font-bold uppercase mt-2 leading-relaxed">
+                    Nueva oportunidad: códigos que el cliente seleccionado nunca ha comprado.
+                </p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+            <div class="bg-black/40 border border-white/10 rounded-2xl p-5 shadow-inner">
+                <h3 class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-4 text-center">Top 6 Marcas (Histórico)</h3>
+                <div class="h-48 w-full flex justify-center"><canvas id="chart-brands"></canvas></div>
+            </div>
+            <div class="bg-black/40 border border-white/10 rounded-2xl p-5 shadow-inner">
+                <h3 class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-4 text-center">Tendencia (Últimos 3 Meses)</h3>
+                <div class="h-48 w-full flex justify-center"><canvas id="chart-trend"></canvas></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div class="strategy-card border-neon-cyan group">
+                <div class="absolute -right-6 -top-4 bg-neon-cyan text-black text-[9px] font-black uppercase py-1.5 px-10 rotate-45 shadow-[0_0_15px_rgba(0,243,255,0.6)]">TIEMPO REAL</div>
+                <div class="text-4xl mb-4">📅</div>
+                <h3 class="text-white font-black text-xl uppercase mb-3">SKU por Mes</h3>
+                <div class="flex flex-col gap-2 mb-4">
+                    <div class="flex gap-2">
+                        <select id="sku-month-selector" class="w-1/2 bg-black/60 border border-white/20 text-neon-cyan rounded-xl p-2.5 text-[10px] font-black uppercase outline-none focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan">
+                            <option value="0">Enero</option> <option value="1">Febrero</option> <option value="2">Marzo</option> <option value="3">Abril</option>
+                            <option value="4">Mayo</option> <option value="5">Junio</option> <option value="6">Julio</option> <option value="7">Agosto</option>
+                            <option value="8">Septiembre</option> <option value="9">Octubre</option> <option value="10">Noviembre</option> <option value="11">Diciembre</option>
+                        </select>
+                        <select id="sku-year-selector" class="w-1/2 bg-black/60 border border-white/20 text-neon-cyan rounded-xl p-2.5 text-[10px] font-black uppercase outline-none focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan"></select>
+                    </div>
+                    <select id="sku-scope-selector" class="w-full bg-[#001233] border border-[#00f3ff]/40 text-white rounded-xl p-2.5 text-[10px] font-black uppercase outline-none shadow-[inset_0_0_10px_rgba(0,243,255,0.1)] focus:border-neon-cyan">
+                        <option value="client">Top de este Cliente</option>
+                        <option value="global">Top Global (Todos)</option>
+                    </select>
+                </div>
+                <p class="text-slate-400 text-[10px] font-bold uppercase mb-4">Filtra hasta 50 códigos más vendidos basados en la selección de fecha.</p>
+                <button onclick="generateCatalogByStrategy('skuPorMes')" class="w-full bg-[#0f172a] hover:bg-[#00f3ff] hover:text-black border border-neon-cyan text-neon-cyan py-3 rounded-xl text-[11px] font-black uppercase shadow-[0_0_15px_rgba(0,243,255,0.2)] transition-all">Generar Reporte</button>
+            </div>
+
+            <div class="strategy-card" style="border-color: var(--neon-green);">
+                <div class="text-4xl mb-4">📝</div>
+                <h3 class="text-white font-black text-xl uppercase mb-3">Cotización Manual</h3>
+                <p class="text-slate-400 text-[10px] font-bold uppercase leading-relaxed mb-4">Busca y agrega códigos manualmente para generar un catálogo a la medida.</p>
+                <button onclick="openManualModal()" class="w-full bg-[#0f172a] hover:bg-[#00ff66] hover:text-black border border-neon-green text-neon-green py-3 rounded-xl text-[11px] font-black uppercase transition-all shadow-[0_0_15px_rgba(0,255,102,0.2)]">Abrir Cotizador</button>
+            </div>
+
+            <button onclick="generateCatalogByStrategy('noComprados90')" class="strategy-card">
+                <div class="text-4xl mb-4">🚨</div>
+                <h3 class="text-white font-black text-xl uppercase mb-3">Recuperación <span class="text-neon-red">+90 días</span></h3>
+                <p class="text-slate-400 text-[10px] font-bold uppercase leading-relaxed">Códigos comprados históricamente, sin movimientos en los últimos 90 días. (Por Venta Global)</p>
+            </button>
+
+            <button onclick="generateCatalogByStrategy('topGlobal')" class="strategy-card">
+                <div class="text-4xl mb-4">📈</div>
+                <h3 class="text-white font-black text-xl uppercase mb-3">Top <span class="text-neon-green">Global</span></h3>
+                <p class="text-slate-400 text-[10px] font-bold uppercase leading-relaxed">Hasta 50 códigos más vendidos globalmente basados en el total de Venta Neta global.</p>
+            </button>
+
+            <div class="strategy-card">
+                <div class="text-4xl mb-4">🎁</div>
+                <h3 class="text-white font-black text-xl uppercase mb-3">Tipo de <span class="text-neon-orange">Promo</span></h3>
+                <select id="promo-selector" class="w-full bg-[#030712] border border-slate-500 text-white rounded-xl p-3 text-[10px] font-black uppercase outline-none mb-4 shadow-inner">
+                    <option value="">Seleccionar promo...</option>
+                </select>
+                <p class="text-slate-400 text-[9px] font-bold uppercase mb-4">Incluye todos los códigos de la promoción, ordenados de mayor a menor venta.</p>
+                <button onclick="generateCatalogByStrategy('tipoPromocion')" class="w-full bg-[#0f172a] hover:bg-[#ffbb00] hover:text-black border border-neon-orange text-neon-orange py-3 rounded-xl text-[11px] font-black uppercase shadow-[0_0_15px_rgba(255,187,0,0.2)]">Generar Catálogo</button>
+            </div>
+
+            <div class="strategy-card">
+                <div class="text-4xl mb-4">🛠️</div>
+                <h3 class="text-white font-black text-xl uppercase mb-3">Tipo de Servicio</h3>
+                <select id="servicio-selector" class="w-full bg-[#030712] border border-slate-500 text-white rounded-xl p-3 text-[10px] font-black uppercase outline-none mb-2 shadow-inner">
+                    <option value="">Seleccionar servicio...</option>
+                </select>
+                <select id="servicio-family-selector" class="w-full bg-[#030712] border border-slate-500 text-white rounded-xl p-3 text-[10px] font-black uppercase outline-none mb-4 shadow-inner">
+                    <option value="">Seleccionar familia (Opcional)...</option>
+                </select>
+                <button onclick="generateCatalogByStrategy('tipoServicioFamilia')" class="w-full bg-[#0f172a] hover:bg-[#ff004c] hover:text-black border border-neon-red text-neon-red py-3 rounded-xl text-[11px] font-black uppercase shadow-[0_0_15px_rgba(255,0,76,0.2)]">Generar Catálogo</button>
+            </div>
+
+            <div class="strategy-card">
+                <div class="text-4xl mb-4">🎯</div>
+                <h3 class="text-white font-black text-xl uppercase mb-3">Marca Específica</h3>
+                <select id="brand-selector" class="w-full bg-[#030712] border border-slate-500 text-white rounded-xl p-3 text-[10px] font-black uppercase outline-none mb-2 shadow-inner">
+                    <option value="">Seleccionar marca...</option>
+                </select>
+                <select id="marca-family-selector" class="w-full bg-[#030712] border border-slate-500 text-white rounded-xl p-3 text-[10px] font-black uppercase outline-none mb-4 shadow-inner">
+                    <option value="">Seleccionar familia (Opcional)...</option>
+                </select>
+                <button onclick="generateCatalogByStrategy('marcaFamilia')" class="w-full bg-[#0f172a] hover:bg-[#00f3ff] hover:text-black border border-neon-cyan text-neon-cyan py-3 rounded-xl text-[11px] font-black uppercase shadow-[0_0_15px_rgba(0,243,255,0.2)]">Generar Catálogo</button>
+            </div>
+
+            <div class="strategy-card">
+                <div class="text-4xl mb-4">📂</div>
+                <h3 class="text-white font-black text-xl uppercase mb-3">Familia Propia</h3>
+                <select id="family-selector" class="w-full bg-[#030712] border border-slate-500 text-white rounded-xl p-3 text-[10px] font-black uppercase outline-none mb-2 shadow-inner">
+                    <option value="">Seleccionar familia...</option>
+                </select>
+                <select id="sistema-selector" class="w-full bg-[#030712] border border-slate-500 text-white rounded-xl p-3 text-[10px] font-black uppercase outline-none mb-4 shadow-inner">
+                    <option value="">Seleccionar sistema (Opcional)...</option>
+                </select>
+                <button onclick="generateCatalogByStrategy('familyEspecifica')" class="w-full bg-[#0f172a] hover:bg-[#00f3ff] hover:text-black border border-neon-cyan text-neon-cyan py-3 rounded-xl text-[11px] font-black uppercase shadow-[0_0_15px_rgba(0,243,255,0.2)]">Generar Familia</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="manual-modal" class="no-print hidden fixed inset-0 bg-[#010308]/90 backdrop-blur-md z-[110] flex items-center justify-center p-4">
+        <div class="bg-[#030712] border border-neon-green shadow-[0_0_40px_rgba(0,255,102,0.2)] rounded-3xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden">
+            <div class="p-6 border-b border-white/10 flex justify-between items-center bg-[#001233]/50">
+                <h2 class="text-xl font-black text-white uppercase tracking-tight flex items-center gap-3">
+                    <span class="text-2xl drop-shadow-[0_0_10px_rgba(0,255,102,0.5)]">📝</span> Cotización Manual Libre
+                </h2>
+                <button onclick="closeManualModal()" class="text-slate-400 hover:text-neon-red p-2 bg-white/5 rounded-full transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-6 flex-grow flex flex-col gap-4 overflow-hidden relative">
+                <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Busca por código exacto o palabras de la descripción:</p>
+                
+                <div class="relative w-full z-[120]">
+                    <input type="text" id="manual-search-input" placeholder="Ej. Filtro de aceite..." class="w-full p-4 bg-[#0a0f1c] border-2 border-slate-600 rounded-xl focus:border-neon-green outline-none text-white font-bold transition-all shadow-inner" oninput="handleManualSearch()">
+                    <div id="manual-search-results" class="absolute top-full left-0 w-full bg-[#050b14] border-x border-b border-neon-green rounded-b-xl max-h-64 overflow-y-auto hidden custom-scrollbar shadow-[0_20px_40px_rgba(0,0,0,0.8)]"></div>
+                </div>
+
+                <div class="flex justify-between items-center mt-2 border-b border-white/10 pb-2">
+                    <span class="text-[10px] text-neon-green font-black uppercase">Lista de Seleccionados:</span>
+                </div>
+
+                <div id="manual-selected-list" class="flex-grow overflow-y-auto space-y-3 custom-scrollbar p-2 bg-white/5 rounded-xl border border-white/5">
+                    </div>
+            </div>
+            <div class="p-6 border-t border-white/10 bg-[#001233]/80 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button onclick="clearManualSkus()" class="border border-[#ff004c] text-[#ff004c] hover:bg-[#ff004c] hover:text-white py-3 rounded-xl text-[11px] font-black uppercase transition-all shadow-[0_0_15px_rgba(255,0,76,0.1)]">Vaciar Todo</button>
+                <button onclick="exportManualExcel()" class="border border-neon-cyan text-neon-cyan hover:bg-[#00f3ff] hover:text-black py-3 rounded-xl text-[11px] font-black uppercase transition-all shadow-[0_0_15px_rgba(0,243,255,0.1)]">Descargar Excel</button>
+                <button onclick="printManualCatalog()" class="bg-neon-green text-black py-3 rounded-xl text-[11px] font-black uppercase shadow-[0_0_20px_rgba(0,255,102,0.4)] hover:scale-105 transition-all">Imprimir Catálogo</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="catalog-container" class="w-full pb-32"></div>
+
+    <div id="cart-bar" class="cart-bar no-print cursor-pointer hover:scale-[1.02]" onclick="openCartDrawer()">
+        <div class="flex flex-col">
+            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Ver Carrito General</span>
+            <span class="text-xl font-black text-white"><span id="cart-count" class="text-neon-green">0</span> Seleccionados</span>
+        </div>
+        <button class="bg-neon-green text-black px-6 py-3 rounded-full text-[11px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(0,255,102,0.4)] flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            ABRIR PANEL
+        </button>
+    </div>
+
+    <div id="cart-drawer" class="no-print fixed top-0 right-0 w-full md:w-[450px] h-full bg-[#030712]/95 backdrop-blur-xl border-l border-neon-green transform translate-x-full transition-transform duration-500 z-[100] shadow-[-20px_0_50px_rgba(0,255,102,0.15)] flex flex-col">
+        <div class="p-6 border-b border-white/10 flex justify-between items-center bg-[#001233]/50">
+            <h2 class="text-xl font-black text-white uppercase tracking-tight flex items-center gap-3">
+                <span class="text-2xl drop-shadow-[0_0_10px_rgba(0,255,102,0.5)]">🛒</span> Mi Cotización
+            </h2>
+            <button onclick="closeCartDrawer()" class="text-slate-400 hover:text-neon-red p-2 bg-white/5 rounded-full"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+        </div>
+        
+        <div class="p-4 border-b border-[#ff004c]/30 bg-black/60 flex items-center gap-3">
+            <input type="text" id="remove-sku-input" onkeypress="if(event.key === 'Enter') removeSkuFromCart()" placeholder="Escribe el código a eliminar..." class="w-full bg-[#030712] border border-slate-600 text-white rounded-xl p-3 text-[10px] font-black uppercase outline-none focus:border-neon-red shadow-inner">
+            <button onclick="removeSkuFromCart()" class="bg-[#0f172a] border border-neon-red text-neon-red hover:bg-[#ff004c] hover:text-white px-5 py-3 rounded-xl text-[10px] font-black uppercase transition-all">Quitar</button>
+        </div>
+        
+        <div id="cart-drawer-items" class="flex-grow overflow-y-auto p-6 space-y-4 custom-scrollbar"></div>
+        
+        <div class="p-6 border-t border-white/10 bg-[#001233]/80 flex flex-col gap-3">
+            <button onclick="exportCartToExcel()" class="w-full bg-neon-green text-black py-4 rounded-xl text-[12px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(0,255,102,0.4)]">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Exportar Cotización (Excel)
+            </button>
+            <button onclick="clearCart()" class="w-full bg-transparent border border-[#ff004c]/50 text-[#ff004c] hover:bg-[#ff004c] hover:text-white py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                Vaciar Todos los Artículos
+            </button>
+        </div>
+    </div>
+</main>
+
+<script>
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => console.log(err.message)); } 
+        else { if (document.exitFullscreen) document.exitFullscreen(); }
+    }
+    document.addEventListener('fullscreenchange', () => {
+        const textSpan = document.getElementById('fs-text');
+        const btn = document.getElementById('btnFullScreen');
+        if (document.fullscreenElement) {
+            textSpan.innerText = 'Salir Pantalla Completa';
+            btn.classList.add('border-neon-cyan', 'text-neon-cyan');
+            btn.classList.remove('border-slate-500', 'text-white');
+        } else {
+            textSpan.innerText = 'Pantalla Completa';
+            btn.classList.remove('border-neon-cyan', 'text-neon-cyan');
+            btn.classList.add('border-slate-500', 'text-white');
+        }
+    });
+
+    const fileInput = document.getElementById('dataFile');
+    const dropZone = document.getElementById('drop-zone');
+    const catalogContainer = document.getElementById('catalog-container');
+    const btnPrint = document.getElementById('btnPrint');
+    const btnBack = document.getElementById('btnBack');
+    const step1 = document.getElementById('step-1');
+    const step2 = document.getElementById('step-2');
+    const stepStrategy = document.getElementById('step-strategy');
+    
+    const regionalView = document.getElementById('regional-view');
+    const advisorView = document.getElementById('advisor-view');
+    const clientView = document.getElementById('client-view');
+    const clientList = document.getElementById('client-list');
+    const loaderIcon = document.getElementById('load-icon');
+    const loaderSpinner = document.getElementById('loader-spinner');
+
+    let companyTree = new Map();
+    let allClientsFlat = new Map(); 
+    let selectedClient = null;
+    let currentSelectedRegional = null;
+    let currentSelectedAdvisor = null; 
+    let globalProducts = new Map();
+    
+    let globalSalesMn = {}; 
+    let globalSalesPesos = {}; 
+    let globalPiezas = {}; 
+    let globalClientsPerSku = {};
+    let globalPromociones = {}; 
+    let globalPromoText = {}; 
+    let globalComentarioPromo = {}; 
+    let globalLowestPrice = {}; 
+    let globalSkuStats = {}; 
+
+    let cartItems = new Set();
+    let manualSkus = []; 
+    let manualSkusQty = {}; 
+    let chartBrandsInstance = null;
+    let chartTrendInstance = null;
+
+    let currentStrategyLabel = "GENERAL";
+    let appCurrentState = "LOAD";
+
+    const NOW = new Date();
+    const CURRENT_YEAR = NOW.getFullYear();
+    const CURRENT_MONTH = NOW.getMonth();
+    const MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+    function clearCacheAndReload() { loaderSpinner.classList.remove('hidden'); location.reload(); }
+
+    function calcularDiasTranscurridos() {
+        let diasAcumulados = 0;
+        let hoy = new Date();
+        
+        for (let d = 1; d <= hoy.getDate(); d++) {
+            let fechaIterada = new Date(hoy.getFullYear(), hoy.getMonth(), d);
+            let diaSemana = fechaIterada.getDay();
+            if (diaSemana >= 1 && diaSemana <= 5) diasAcumulados += 1;
+            else if (diaSemana === 6) diasAcumulados += 0.5;
+        }
+        return diasAcumulados;
+    }
+
+    function obtenerDiasEfectivosDelMes(anio, mes) {
+        let dias = 0;
+        let ultimoDia = new Date(anio, mes + 1, 0).getDate();
+        for (let d = 1; d <= ultimoDia; d++) {
+            let diaSemana = new Date(anio, mes, d).getDay();
+            if (diaSemana >= 1 && diaSemana <= 5) dias += 1;
+            else if (diaSemana === 6) dias += 0.5;
+        }
+        return dias;
+    }
+
+    const DIAS_EFECTIVOS_MES = obtenerDiasEfectivosDelMes(CURRENT_YEAR, CURRENT_MONTH); 
+    const DIAS_TRANSCURRIDOS = calcularDiasTranscurridos();
+    const marcasPropias = ["STAR", "BRESSER", "BRESSER LKW", "DYNAMIC", "TECNOFUEL", "VALUE", "ACOSA", "REWARD", "WEISCHLER", "CARFAN", "VERZE", "JULS CARMAN", "REIDEN"];
+    
+    function normalizeBrandName(value) { return String(value || "").trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
+    
+    dropZone.addEventListener('click', e => { if (e.target.id !== 'btnSelectFile' && e.target.tagName !== 'BUTTON') fileInput.click(); });
+    document.getElementById('btnSelectFile').addEventListener('click', e => { e.stopPropagation(); fileInput.click(); });
+    fileInput.addEventListener('change', e => { const file = e.target.files[0]; if (file) handleFile(file); });
+    document.getElementById('btnLoadCloud').addEventListener('click', async e => {
+        e.stopPropagation();
+        await tryLoadGzipJson();
+    });
+
+    function pickCloudArray(source, aliases) {
+        if (!source || typeof source !== 'object') return [];
+        for (const key of aliases) if (Array.isArray(source[key])) return source[key];
+        const normalizedAliases = aliases.map(normalizeKey);
+        for (const [key, value] of Object.entries(source)) {
+            if (Array.isArray(value) && normalizedAliases.includes(normalizeKey(key))) return value;
+        }
+        return [];
+    }
+
+    function processCloudPayload(payload) {
+        const root = payload && payload.data && typeof payload.data === 'object' ? payload.data : payload;
+        const dataProductos = pickCloudArray(root, ['Productos', 'productos', 'dataProductos']);
+        const dataClientes = pickCloudArray(root, ['Clientes', 'clientes', 'dataClientes']);
+        const dataJerarquia = pickCloudArray(root, ['Jerarquia', 'Jerarquía', 'jerarquia', 'dataJerarquia']);
+        const dataVentas = pickCloudArray(root, ['Ventas', 'ventas', 'dataVentas']);
+        if (!dataProductos.length || !dataClientes.length || !dataJerarquia.length || !dataVentas.length) {
+            throw new Error('El JSON no contiene Productos, Clientes, Jerarquia y Ventas.');
+        }
+        processData(dataProductos, dataClientes, dataJerarquia, dataVentas);
+    }
+
+    async function tryLoadGzipJson() {
+        const gzFileName = 'apymsa_inteligencia_comercial_v15_1.json.gz';
+        const encodedGz = encodeURIComponent(gzFileName);
+        const gzUrls = [
+            // Enlace exacto proporcionado. No contiene espacios en el nombre.
+            'https://github.com/JOSELITO198004/apymsa-inteligencia-comercial-v15.0/raw/refs/heads/main/' + encodedGz,
+            // URL directa recomendada de GitHub Raw.
+            'https://raw.githubusercontent.com/JOSELITO198004/apymsa-inteligencia-comercial-v15.0/refs/heads/main/' + encodedGz,
+            'https://raw.githubusercontent.com/JOSELITO198004/apymsa-inteligencia-comercial-v15.0/main/' + encodedGz,
+            'https://cdn.jsdelivr.net/gh/JOSELITO198004/apymsa-inteligencia-comercial-v15.0@main/' + encodedGz,
+            'https://joselito198004.github.io/apymsa-inteligencia-comercial-v15.0/' + encodedGz,
+            new URL(gzFileName, window.location.href).href
+        ];
+        const errors = [];
+        const cloudButton = document.getElementById('btnLoadCloud');
+        loaderIcon.classList.add('hidden');
+        loaderSpinner.classList.remove('hidden');
+        document.getElementById('loader-text').innerText = 'Cargando base de datos desde la nube...';
+        cloudButton.disabled = true;
+        cloudButton.classList.add('opacity-50', 'cursor-wait');
+        try {
+            for (const url of gzUrls) {
+                try {
+                    const response = await fetch(url, { cache: 'no-store' });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const compressed = new Uint8Array(await response.arrayBuffer());
+                    if (compressed.length < 2 || compressed[0] !== 0x1f || compressed[1] !== 0x8b) {
+                        const contentType = response.headers.get('content-type') || 'desconocido';
+                        throw new Error(`La respuesta no es GZIP (Content-Type: ${contentType}). Puede ser una pagina HTML, un 404 o bloqueo CORS.`);
+                    }
+                    if (!window.pako) throw new Error('No se pudo cargar Pako.');
+                    const jsonText = pako.ungzip(compressed, { to: 'string' });
+                    processCloudPayload(JSON.parse(jsonText));
+                    return;
+                } catch (err) {
+                    errors.push(`${url}: ${err.message}`);
+                }
+            }
+            throw new Error(errors.join(' | '));
+        } catch (err) {
+            console.error('Error cargando nube:', err);
+            showAlert('NO SE PUDO CARGAR LA BASE DESDE LA NUBE. REVISA EL ARCHIVO .JSON.GZ, LA RUTA O CORS.');
+            resetCarga();
+        } finally {
+            cloudButton.disabled = false;
+            cloudButton.classList.remove('opacity-50', 'cursor-wait');
+        }
+    }
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => { dropZone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); }); });
+    dropZone.addEventListener('dragover', () => { dropZone.classList.add('bg-[#00f3ff]/10', 'border-[#00f3ff]'); });
+    dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('bg-[#00f3ff]/10', 'border-[#00f3ff]'); });
+    dropZone.addEventListener('drop', e => { dropZone.classList.remove('bg-[#00f3ff]/10', 'border-[#00f3ff]'); if(e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]); });
+    document.getElementById('clientSearch').addEventListener('input', () => renderClientList());
+
+    function showAlert(msg) {
+        const box = document.getElementById('alert-box');
+        document.getElementById('alert-msg').innerText = msg;
+        box.classList.remove('hidden');
+        setTimeout(() => box.classList.add('hidden'), 5000);
+    }
+
+    function normalizeKey(key) { return String(key || "").toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9_]/g, ""); }
+    function getSku(item) { return String(item.codigo || item.producto || "").trim(); }
+    function getDescription(item) { return String(item.descripcion_producto || item.descripcionproducto || item.descripcion || "SIN DESCRIPCIÓN").trim(); }
+    function getBrand(item) { return String(item.marca || "SIN MARCA").trim(); }
+    function getFamily(item) { return String(item.familias || item.familia || "SIN FAMILIA").trim(); }
+    function getSistema(item) { return String(item.sistema || "SIN SISTEMA").trim(); }
+    function getTipoServicio(item) { return String(item.servicio || item.tipodeservicio || item.tipo_servicio || "SIN SERVICIO").trim(); }
+    function getArmadora(item) { return String(item.armadora || "SIN ARMADORA").trim(); }
+    function getProductImageUrl(item) { return String(item.urlimagenproducto || item.url_imagen_producto || "").trim(); }
+    function getBrandLogoUrl(item) { return String(item.urlimagenmarca || item.url_imagen_marca || "").trim(); }
+
+    function parseMoney(value) { 
+        if (typeof value === 'number') return value;
+        if (!value) return 0;
+        let num = parseFloat(String(value).replace(/[^\d.-]/g, '').trim());
+        return isNaN(num) ? 0 : num;
+    }
+    
+    function parseDate(val) {
+        if (!val) return null;
+        if (typeof val === 'number' && !isNaN(val)) {
+            let dateInfo = new Date((Math.floor(val - 25569) * 86400) * 1000);
+            return new Date(dateInfo.getUTCFullYear(), dateInfo.getUTCMonth(), dateInfo.getUTCDate(), 12, 0, 0);
+        }
+        const raw = String(val).trim(); if (!raw) return null;
+        const isoMatch = raw.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+        if (isoMatch) return new Date(parseInt(isoMatch[1], 10), parseInt(isoMatch[2], 10) - 1, parseInt(isoMatch[3], 10), 12, 0, 0);
+        const localMatch = raw.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+        if (localMatch) {
+            let p1 = parseInt(localMatch[1], 10), p2 = parseInt(localMatch[2], 10), p3 = parseInt(localMatch[3], 10);
+            if (p1 > 12) return new Date(p3, p2 - 1, p1, 12, 0, 0); 
+            else return new Date(p3, p1 - 1, p2, 12, 0, 0); 
+        }
+        let d = new Date(raw); return isNaN(d.getTime()) ? null : d;
+    }
+
+    function getSemaforoProyeccionClass(porcentaje) { return porcentaje >= 100 ? "glow-green" : (porcentaje >= 85 ? "glow-orange" : "glow-red"); }
+    function getSemaforoProyeccionTextClass(porcentaje) { return porcentaje >= 100 ? "status-text-green" : (porcentaje >= 85 ? "status-text-orange" : "status-text-red"); }
+
+    async function handleFile(file) {
+        const fileName = String(file.name || '').trim();
+        const lowerName = fileName.toLowerCase();
+
+        if (!(lowerName.endsWith('.json.gz') || lowerName.endsWith('.gz'))) {
+            showAlert('SELECCIONA UN ARCHIVO LOCAL .JSON.GZ O .GZ.');
+            fileInput.value = '';
+            return;
+        }
+
+        loaderIcon.classList.add('hidden');
+        loaderSpinner.classList.remove('hidden');
+        document.getElementById('loader-text').innerText = 'Leyendo y descomprimiendo JSON.GZ local...';
+
+        try {
+            const compressed = new Uint8Array(await file.arrayBuffer());
+
+            if (compressed.length < 2 || compressed[0] !== 0x1f || compressed[1] !== 0x8b) {
+                throw new Error('El archivo seleccionado no tiene una firma GZIP valida.');
+            }
+            if (!window.pako) {
+                throw new Error('No se pudo cargar la libreria Pako para descomprimir.');
+            }
+
+            const jsonText = pako.ungzip(compressed, { to: 'string' });
+            if (!jsonText || !jsonText.trim()) {
+                throw new Error('El contenido JSON descomprimido esta vacio.');
+            }
+
+            const payload = JSON.parse(jsonText.replace(/^\uFEFF/, '').trim());
+            processCloudPayload(payload);
+        } catch (err) {
+            console.error('Error cargando JSON.GZ local:', err);
+            showAlert('ERROR JSON.GZ LOCAL: ' + (err && err.message ? err.message : 'Error desconocido'));
+            resetCarga();
+        }
+    }
+
+    function resetCarga() { loaderIcon.classList.remove('hidden'); loaderSpinner.classList.add('hidden'); fileInput.value = ''; }
+
+    function normalizeRow(row) {
+        if (!row || Object.keys(row).length === 0) return {};
+        const item = {};
+        for (let k in row) {
+            if (!k) continue;
+            const rawNorm = k.trim().toLowerCase();
+            const normalizedK = normalizeKey(k);
+            item[rawNorm] = row[k];
+            item[normalizedK] = row[k];
+        }
+        return item;
+    }
+
+    function processData(dataProductos, dataClientes, dataJerarquia, dataVentas) {
+        companyTree.clear(); allClientsFlat.clear(); globalProducts.clear();
+        globalSalesMn = {}; globalSalesPesos = {}; globalPiezas = {}; globalClientsPerSku = {};
+        globalPromociones = {}; globalPromoText = {}; globalComentarioPromo = {}; globalLowestPrice = {};
+        globalSkuStats = {};
+
+        // 1. JERARQUÍA
+        dataJerarquia.forEach(row => {
+            const item = normalizeRow(row);
+            const regName = String(item.gerente_regional || item.gerente || item.regional || "SIN GERENTE").trim().toUpperCase();
+            const zoneName = String(item.sucursal_vendedor || item.sucursal || "SIN SUCURSAL").trim().toUpperCase();
+            const advName = String(item.asesor || item.vendedor || item.ejecutivo || "SIN ASESOR").trim().toUpperCase();
+
+            if (!companyTree.has(regName)) {
+                companyTree.set(regName, { name: regName, region: zoneName, totalVenta: 0, totalCuota: 0, asesores: new Map() });
+            }
+            const regNode = companyTree.get(regName);
+            if (!regNode.asesores.has(advName)) {
+                regNode.asesores.set(advName, { name: advName, sucursal: zoneName, totalVenta: 0, totalCuota: 0, clientes: new Map() });
+            }
+        });
+
+        // 2. CLIENTES
+        dataClientes.forEach(row => {
+            const item = normalizeRow(row);
+            const cliId = String(item.cliente_id || item.clienteid || item.id_cliente || "").trim().toUpperCase();
+            const cliVendId = String(item.cliente_vendedor_id || item.clientevendedorid || "").trim().toUpperCase();
+            if (!cliId) return;
+
+            const advName = String(item.asesor || item.vendedor || "SIN ASESOR").trim().toUpperCase();
+            const cliName = String(item.razon_social || item.razonsocial || "SIN NOMBRE").trim();
+            const ciudad = String(item.ciudad || "").trim();
+            const tipoCliente = String(item.tipo_cliente || item.tipo || "GENERAL").trim().toUpperCase();
+            
+            let cliCuota = parseMoney(item['cuota'] || 0);
+            let cliVenta = parseMoney(item['venta_mn'] || 0); 
+            let cliVentaAnt = parseMoney(item['venta_mes_anterior'] || 0);
+            
+            let focusOriginal = String(item.enfoque || "GENERAL").trim();
+            let focus = focusOriginal;
+            
+            if (cliVentaAnt <= 0 && cliVenta <= 0) {
+                focus = "URGENTE:SIN VENTA";
+            } else if (cliVenta > 0 && focus === "URGENTE:SIN VENTA") {
+                focus = "GENERAL"; 
+            }
+
+            let foundReg = "SIN GERENTE";
+            let advNode = null;
+            let regNode = null;
+
+            for (let [rName, rNode] of companyTree.entries()) {
+                if (rNode.asesores.has(advName)) {
+                    foundReg = rName;
+                    regNode = rNode;
+                    advNode = rNode.asesores.get(advName);
+                    break;
+                }
+            }
+
+            if (!advNode) {
+                if (!companyTree.has("SIN GERENTE")) companyTree.set("SIN GERENTE", { name: "SIN GERENTE", region: "SIN SUCURSAL", totalVenta: 0, totalCuota: 0, asesores: new Map() });
+                regNode = companyTree.get("SIN GERENTE");
+                if (!regNode.asesores.has(advName)) regNode.asesores.set(advName, { name: advName, sucursal: "SIN SUCURSAL", totalVenta: 0, totalCuota: 0, clientes: new Map() });
+                advNode = regNode.asesores.get(advName);
+            }
+
+            const cliObj = {
+                id: cliId, cliVendId: cliVendId, name: cliName, ciudad: ciudad, focus: focus, advisor: advName, regional: foundReg,
+                tipoCliente: tipoCliente, venta: cliVenta, cuota: cliCuota, piezas: 0, rawItems: []
+            };
+
+            advNode.clientes.set(cliId, cliObj);
+            allClientsFlat.set(cliId, cliObj);
+
+            advNode.totalVenta += cliVenta;
+            advNode.totalCuota += cliCuota;
+            regNode.totalVenta += cliVenta;
+            regNode.totalCuota += cliCuota;
+        });
+
+        // 3. PRODUCTOS
+        dataProductos.forEach(row => {
+            const item = normalizeRow(row);
+            const sku = getSku(item);
+            if (!sku) return;
+
+            // Promociones: reconoce precio, tipo de promocion y comentario.
+            const tempPromoVal = parseMoney(
+                item["precio solicitado"] || item["preciosolicitado"] ||
+                item["precio promocion"] || item["preciopromocion"] ||
+                item["precio promo"] || item["preciopromo"] || 0
+            );
+            const rawPromoText = String(
+                item["tipo promocion"] || item["tipopromocion"] ||
+                item["promocion"] || item["promo"] || ""
+            ).trim();
+            const rawComment = String(
+                item["comentario"] || item["comentario promocion"] ||
+                item["comentariopromocion"] || ""
+            ).trim();
+            const isValidPromoText = value => {
+                const normalized = String(value || "").trim().toLowerCase();
+                return normalized && !["0", "null", "undefined", "na", "n/a"].includes(normalized);
+            };
+            const tempPromoText = isValidPromoText(rawPromoText) ? rawPromoText : "";
+            const tempPromoComment = isValidPromoText(rawComment) ? rawComment : "";
+
+            if (tempPromoVal > 0) globalPromociones[sku] = tempPromoVal;
+            if (tempPromoText) globalPromoText[sku] = tempPromoText;
+            if (tempPromoComment) globalComentarioPromo[sku] = tempPromoComment;
+
+            globalProducts.set(sku, item);
+        });
+
+        // 4. VENTAS FACTURACIÓN
+        dataVentas.forEach(row => {
+            const item = normalizeRow(row);
+            const cliId = String(item.cliente_id || item.clienteid || item.id_cliente || "").trim().toUpperCase();
+            if (!cliId || !allClientsFlat.has(cliId)) return;
+
+            const sku = getSku(item);
+            if (!sku) return;
+
+            // Ventas admite la columna "Marca"; si esta vacia se completa desde Productos.
+            const productForSale = globalProducts.get(sku);
+            item.marca = String(item.marca || item.brand || (productForSale ? getBrand(productForSale) : "SIN MARCA")).trim();
+
+            const cliNode = allClientsFlat.get(cliId);
+            const tipoCliente = cliNode.tipoCliente;
+            
+            let vpesos = parseMoney(item['venta en pesos'] || item['venta_en_pesos'] || 0);
+            let pz = parseMoney(item['venta en piezas'] || item['venta_en_piezas'] || item['piezas'] || item['cantidad'] || 0);
+            
+            item._vmn_calculado = vpesos;
+            item._venta_piezas_calculada = pz;
+            item.fecha_doc = parseDate(item.fecha_factura || item.fecha);
+            
+            cliNode.rawItems.push(item);
+
+            if (pz > 0 && vpesos > 0) {
+                let pricePerUnit = vpesos / pz;
+                if (!globalLowestPrice[sku] || pricePerUnit < globalLowestPrice[sku]) globalLowestPrice[sku] = pricePerUnit;
+            }
+
+            if (!globalSalesPesos[sku]) globalSalesPesos[sku] = 0; globalSalesPesos[sku] += vpesos;
+            if (!globalSalesMn[sku]) globalSalesMn[sku] = 0; globalSalesMn[sku] += vpesos; 
+            if (!globalPiezas[sku]) globalPiezas[sku] = 0; globalPiezas[sku] += pz;
+            
+            if (!globalSkuStats[sku]) globalSkuStats[sku] = {};
+            if (!globalSkuStats[sku][tipoCliente]) globalSkuStats[sku][tipoCliente] = { mn: 0, pz: 0 };
+            globalSkuStats[sku][tipoCliente].mn += vpesos;
+            globalSkuStats[sku][tipoCliente].pz += pz;
+
+            if (!globalClientsPerSku[sku]) globalClientsPerSku[sku] = new Set();
+            globalClientsPerSku[sku].add(cliId);
+        });
+
+        loaderIcon.classList.remove('hidden'); loaderSpinner.classList.add('hidden');
+        step1.classList.add('hidden'); step2.classList.remove('hidden'); btnBack.classList.remove('hidden');
+        appCurrentState = "PANEL_REGIONALES";
+        document.getElementById('summary-count').innerText = `${allClientsFlat.size} clientes | ${globalProducts.size} códigos`;
+        populateSelectors();
+        renderRegionalCards();
+    }
+
+    function renderRegionalCards() {
+        const container = document.getElementById('regional-cards'); container.innerHTML = '';
+        const fmt = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
+        Array.from(companyTree.values()).sort((a,b)=> b.totalVenta - a.totalVenta).forEach(reg => {
+            const proyeccion = DIAS_TRANSCURRIDOS > 0 ? (reg.totalVenta / DIAS_TRANSCURRIDOS) * DIAS_EFECTIVOS_MES : 0;
+            const porcentaje = reg.totalCuota > 0 ? (proyeccion / reg.totalCuota) * 100 : 0;
+            const div = document.createElement('div');
+            div.className = "advisor-card-btn border border-white/5 rounded-2xl p-6 flex flex-col justify-between";
+            div.onclick = () => openRegionalAdvisors(reg.name);
+            
+            let zoneTitle = reg.name !== "SIN GERENTE" ? "Director de Ventas" : "Zonas sin Asignar";
+            
+            div.innerHTML = `
+                <div class="flex justify-between items-start mb-5">
+                    <div><div class="text-[9px] text-slate-400 font-bold uppercase tracking-[0.1em] mb-1">${zoneTitle}</div><div class="text-xl font-black text-white uppercase break-words">${reg.name}</div></div>
+                    <div class="traffic-light ${getSemaforoProyeccionClass(porcentaje)} flex-shrink-0"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div><div class="text-[8px] text-slate-400 font-bold uppercase">Venta Neta Mes</div><div class="text-[13px] font-black text-white">${fmt.format(reg.totalVenta)}</div></div>
+                    <div><div class="text-[8px] text-slate-400 font-bold uppercase">Meta Acumulada</div><div class="text-[13px] font-black text-white">${fmt.format(reg.totalCuota)}</div></div>
+                </div>
+                <div class="border-t border-white/10 pt-4 flex justify-between items-center"><div class="text-[9px] text-slate-400 font-bold uppercase">Proyección Alcance</div><div class="text-lg font-black ${getSemaforoProyeccionTextClass(porcentaje)}">${porcentaje.toFixed(1)}%</div></div>`;
+            container.appendChild(div);
+        });
+    }
+
+    function renderAdvisorCards() {
+        const container = document.getElementById('advisor-cards'); container.innerHTML = '';
+        if (!currentSelectedRegional) return;
+        const fmt = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
+        Array.from(currentSelectedRegional.asesores.values()).sort((a,b)=>b.totalVenta - a.totalVenta).forEach(adv => {
+            const proyeccion = DIAS_TRANSCURRIDOS > 0 ? (adv.totalVenta / DIAS_TRANSCURRIDOS) * DIAS_EFECTIVOS_MES : 0;
+            const porcentaje = adv.totalCuota > 0 ? (proyeccion / adv.totalCuota) * 100 : 0;
+            const div = document.createElement('div');
+            div.className = "advisor-card-btn border border-white/5 rounded-2xl p-6 flex flex-col justify-between";
+            div.onclick = () => openAdvisorClients(adv.name);
+            div.innerHTML = `
+                <div class="flex justify-between items-start mb-5">
+                    <div>
+                        <div class="text-[9px] text-slate-400 font-bold uppercase mb-1">Asesor Comercial</div>
+                        <div class="text-xl font-black text-white uppercase">${adv.name}</div>
+                        <div class="text-[8px] text-neon-cyan font-bold uppercase mt-1">Sucursal: ${adv.sucursal || 'N/A'}</div>
+                    </div>
+                    <div class="traffic-light ${getSemaforoProyeccionClass(porcentaje)}"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div><div class="text-[8px] text-slate-400 font-bold uppercase">Venta</div><div class="text-[13px] font-black text-white">${fmt.format(adv.totalVenta)}</div></div>
+                    <div><div class="text-[8px] text-slate-400 font-bold uppercase">Objetivo</div><div class="text-[13px] font-black text-white">${fmt.format(adv.totalCuota)}</div></div>
+                </div>
+                <div class="border-t border-white/10 pt-4 flex justify-between items-center"><div class="text-[9px] text-slate-400 font-bold uppercase">Alcance</div><div class="text-lg font-black ${getSemaforoProyeccionTextClass(porcentaje)}">${porcentaje.toFixed(1)}%</div></div>`;
+            container.appendChild(div);
+        });
+    }
+
+    function renderClientList() {
+        const container = document.getElementById('client-list'); container.innerHTML = '';
+        if (!currentSelectedAdvisor) return;
+        const search = document.getElementById('clientSearch').value.toLowerCase().trim();
+        const fmt = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
+        Array.from(currentSelectedAdvisor.clientes.values()).filter(c => c.id.toLowerCase().includes(search) || c.name.toLowerCase().includes(search)).sort((a,b)=>b.venta - a.venta).forEach(client => {
+            const proyeccion = DIAS_TRANSCURRIDOS > 0 ? (client.venta / DIAS_TRANSCURRIDOS) * DIAS_EFECTIVOS_MES : 0;
+            const porcentaje = client.cuota > 0 ? (proyeccion / client.cuota) * 100 : 0;
+            
+            let focusColor = "bg-white/5 text-white";
+            if (client.focus === "URGENTE:SIN VENTA") focusColor = "bg-[#ff004c]/20 text-[#ff004c] border border-[#ff004c]/50 animate-pulse";
+            
+            const div = document.createElement('div');
+            div.className = "p-5 bg-[#050b14]/80 border-2 border-white/5 rounded-2xl hover:border-neon-cyan cursor-pointer flex flex-col md:flex-row justify-between items-center gap-4 group";
+            div.onclick = () => selectClient(client.id);
+            div.innerHTML = `
+                <div class="flex-grow w-full">
+                    <div class="flex items-center gap-3 mb-2"><span class="${focusColor} px-2.5 py-1 rounded text-[8px] font-black">${client.focus}</span><span class="text-[9px] text-slate-500 font-bold">ID: ${client.cliVendId || client.id}</span></div>
+                    <div class="text-xl font-black text-white uppercase group-hover:text-neon-cyan">${client.name}</div>
+                    <div class="text-[10px] text-slate-400 font-bold uppercase mt-1"><span class="text-neon-cyan">📍</span> ${client.ciudad || 'CIUDAD NO ESPECIFICADA'}</div>
+                    <div class="grid grid-cols-3 gap-4 mt-3 max-w-2xl bg-white/5 p-3 rounded-xl">
+                        <div><span class="text-[8px] text-slate-400 font-bold block uppercase">Venta Neta Mes</span><span class="text-sm font-black text-white">${fmt.format(client.venta)}</span></div>
+                        <div><span class="text-[8px] text-slate-400 font-bold block uppercase">Objetivo Mn</span><span class="text-sm font-black text-white">${fmt.format(client.cuota)}</span></div>
+                        <div><span class="text-[8px] text-slate-400 font-bold block uppercase">Proyección</span><span class="text-sm font-black text-neon-cyan">${fmt.format(proyeccion)}</span></div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-5 flex-shrink-0 w-full md:w-auto justify-between md:justify-end">
+                    <div class="text-right"><span class="text-[9px] text-slate-400 font-bold block uppercase">Alcance</span><span class="text-2xl font-black text-white">${porcentaje.toFixed(1)}%</span></div>
+                    <div class="traffic-light ${getSemaforoProyeccionClass(porcentaje)} scale-125"></div>
+                </div>`;
+            container.appendChild(div);
+        });
+    }
+
+    function switchTab(tabName) {
+        if (tabName === 'clientes') {
+            document.getElementById('tab-content-clientes').classList.remove('hidden');
+            document.getElementById('tab-content-bonos').classList.add('hidden');
+            
+            document.getElementById('tab-clientes').classList.add('bg-[#00f3ff]', 'text-black');
+            document.getElementById('tab-clientes').classList.remove('bg-[#0f172a]', 'text-neon-cyan');
+            
+            document.getElementById('tab-bonos').classList.add('bg-[#0f172a]', 'text-neon-orange');
+            document.getElementById('tab-bonos').classList.remove('bg-[#ffbb00]', 'text-black');
+        } else {
+            document.getElementById('tab-content-clientes').classList.add('hidden');
+            document.getElementById('tab-content-bonos').classList.remove('hidden');
+            
+            document.getElementById('tab-bonos').classList.add('bg-[#ffbb00]', 'text-black');
+            document.getElementById('tab-bonos').classList.remove('bg-[#0f172a]', 'text-neon-orange');
+            
+            document.getElementById('tab-clientes').classList.add('bg-[#0f172a]', 'text-neon-cyan');
+            document.getElementById('tab-clientes').classList.remove('bg-[#00f3ff]', 'text-black');
+            
+            renderBonusView();
+        }
+    }
+
+    function renderBonusView() {
+        const container = document.getElementById('bonus-cards-container');
+        container.innerHTML = '';
+        if (!currentSelectedAdvisor) return;
+
+        const fmt = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
+        const ventaAcumulada = currentSelectedAdvisor.totalVenta;
+        const cuotaTotal = currentSelectedAdvisor.totalCuota;
+
+        const metasSemanales = [
+            { nombre: 'Semana 1', corte: 'Corte 1 al 11 de Julio', obj: 0.36 },
+            { nombre: 'Semana 2', corte: 'Corte 1 al 18 de Julio', obj: 0.58 },
+            { nombre: 'Semana 3', corte: 'Corte 1 al 25 de Julio', obj: 0.80 }
+        ];
+
+        metasSemanales.forEach((meta) => {
+            const metaSemanal = cuotaTotal * meta.obj;
+            const deficit = metaSemanal > ventaAcumulada ? metaSemanal - ventaAcumulada : 0;
+            const porcentajeAvance = metaSemanal > 0 ? (ventaAcumulada / metaSemanal) * 100 : 0;
+            const logrado = ventaAcumulada >= metaSemanal;
+
+            const colorBorder = logrado ? 'border-neon-green' : 'border-neon-red';
+            const colorText = logrado ? 'text-neon-green' : 'text-neon-red';
+            const shadow = logrado ? 'shadow-[0_0_15px_rgba(0,255,102,0.2)]' : 'shadow-[0_0_15px_rgba(255,0,76,0.2)]';
+
+            container.innerHTML += `
+                <div class="bg-black/60 border ${colorBorder} rounded-2xl p-6 ${shadow} flex flex-col justify-between relative overflow-hidden group hover:scale-105 transition-transform">
+                    ${logrado ? `<div class="absolute -right-8 top-4 bg-neon-green text-black text-[9px] font-black uppercase py-1 px-10 rotate-45 shadow-[0_0_10px_rgba(0,255,102,0.5)]">LOGRADO</div>` : ''}
+                    
+                    <div class="mb-4 border-b border-white/10 pb-4">
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">${meta.corte}</div>
+                        <div class="text-2xl font-black text-white uppercase">${meta.nombre} <span class="text-lg text-neon-orange">(${meta.obj * 100}%)</span></div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-5">
+                        <div>
+                            <span class="text-[8px] text-slate-500 font-bold block uppercase">Meta Semanal</span>
+                            <span class="text-sm font-black text-white">${fmt.format(metaSemanal)}</span>
+                        </div>
+                        <div>
+                            <span class="text-[8px] text-slate-500 font-bold block uppercase">Avance (Venta Real)</span>
+                            <span class="text-sm font-black text-white">${fmt.format(ventaAcumulada)}</span>
+                        </div>
+                        <div class="col-span-2 bg-white/5 p-3 rounded-lg border border-white/5">
+                            <span class="text-[9px] text-slate-500 font-bold block uppercase">Déficit para Lograr Bono</span>
+                            <span class="text-xl font-black ${colorText}">${fmt.format(deficit)}</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[9px] text-slate-400 font-bold uppercase">Progreso vs Semana</span>
+                            <span class="text-[11px] font-black ${colorText}">${porcentajeAvance.toFixed(1)}%</span>
+                        </div>
+                        <div class="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                            <div class="${logrado ? 'bg-neon-green' : 'bg-neon-red'} h-2 rounded-full" style="width: ${Math.min(porcentajeAvance, 100)}%"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function openRegionalAdvisors(name) { currentSelectedRegional = companyTree.get(name); if(!currentSelectedRegional) return; document.getElementById('regional-view').classList.add('hidden'); document.getElementById('advisor-view').classList.remove('hidden'); document.getElementById('current-regional-title').innerText = name; appCurrentState = "PANEL_ASESORES"; renderAdvisorCards(); }
+    function backToRegionals() { currentSelectedRegional = null; document.getElementById('advisor-view').classList.add('hidden'); document.getElementById('regional-view').classList.remove('hidden'); appCurrentState = "PANEL_REGIONALES"; }
+    
+    function openAdvisorClients(name) { 
+        if(!currentSelectedRegional) return; 
+        currentSelectedAdvisor = currentSelectedRegional.asesores.get(name); 
+        if(!currentSelectedAdvisor) return; 
+        
+        document.getElementById('advisor-view').classList.add('hidden'); 
+        document.getElementById('client-view').classList.remove('hidden'); 
+        document.getElementById('current-advisor-title').innerText = name; 
+        
+        switchTab('clientes');
+        
+        appCurrentState = "LISTA_CLIENTES"; 
+        renderClientList(); 
+    }
+    
+    function backToAdvisors() { currentSelectedAdvisor = null; document.getElementById('client-view').classList.add('hidden'); document.getElementById('advisor-view').classList.remove('hidden'); appCurrentState = "PANEL_ASESORES"; }
+
+    function selectClient(id) {
+        if(!currentSelectedAdvisor) return; selectedClient = currentSelectedAdvisor.clientes.get(id); if(!selectedClient) return;
+        step2.classList.add('hidden'); stepStrategy.classList.remove('hidden'); catalogContainer.innerHTML = ''; hideCartBar(); 
+        
+        manualSkus = []; 
+        manualSkusQty = {}; 
+
+        const fmt = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
+        document.getElementById('strategy-client-name').innerText = selectedClient.name;
+        document.getElementById('strategy-client-meta').innerText = `ID: ${selectedClient.cliVendId || selectedClient.id} | Asesor: ${selectedClient.advisor} | Venta Mes: ${fmt.format(selectedClient.venta || 0)}`;
+        renderDashboards(selectedClient); appCurrentState = "MENU_ESTRATEGIAS";
+    }
+
+    function renderDashboards(client) {
+        let brandSales = {};
+        client.rawItems.forEach(item => {
+            let brand = normalizeBrandName(getBrand(item)), venta = item._vmn_calculado || 0;
+            if(venta > 0) { if(!brandSales[brand]) brandSales[brand] = 0; brandSales[brand] += venta; }
+        });
+        let sortedBrands = Object.entries(brandSales).sort((a,b) => b[1] - a[1]);
+        let topN = sortedBrands.slice(0, 6);
+        let brandLabels = topN.map(b => b[0]);
+        let brandData = topN.map(b => b[1]);
+
+        let m1 = (CURRENT_MONTH - 1 + 12) % 12, y1 = CURRENT_MONTH - 1 < 0 ? CURRENT_YEAR - 1 : CURRENT_YEAR;
+        let m2 = (CURRENT_MONTH - 2 + 12) % 12, y2 = CURRENT_MONTH - 2 < 0 ? CURRENT_YEAR - 1 : CURRENT_YEAR;
+        let m3 = (CURRENT_MONTH - 3 + 12) % 12, y3 = CURRENT_MONTH - 3 < 0 ? CURRENT_YEAR - 1 : CURRENT_YEAR;
+
+        let targets = [{ m: m3, y: y3, label: MESES_NOMBRES[m3], value: 0 }, { m: m2, y: y2, label: MESES_NOMBRES[m2], value: 0 }, { m: m1, y: y1, label: MESES_NOMBRES[m1], value: 0 }];
+        client.rawItems.forEach(item => {
+            let d = item.fecha_doc;
+            if (d) { let target = targets.find(t => t.m === d.getMonth() && t.y === d.getFullYear()); if (target) target.value += (item._vmn_calculado || 0); }
+        });
+
+        if(chartBrandsInstance) chartBrandsInstance.destroy();
+        if(chartTrendInstance) chartTrendInstance.destroy();
+        Chart.defaults.color = '#94a3b8'; Chart.defaults.font.family = 'Montserrat';
+        const ctxBrands = document.getElementById('chart-brands').getContext('2d');
+        chartBrandsInstance = new Chart(ctxBrands, { type: 'doughnut', data: { labels: brandLabels, datasets: [{ data: brandData, backgroundColor: ['#00f3ff', '#ff004c', '#00ff66', '#ffbb00', '#a855f7', '#ec4899', '#334155'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 9, weight: 'bold' } } } } } });
+
+        const ctxTrend = document.getElementById('chart-trend').getContext('2d');
+        chartTrendInstance = new Chart(ctxTrend, { type: 'bar', data: { labels: targets.map(t=>t.label), datasets: [{ label: 'Venta $', data: targets.map(t=>t.value), backgroundColor: 'rgba(0, 243, 255, 0.2)', borderColor: '#00f3ff', borderWidth: 1, borderRadius: 4 }] }, plugins: [ChartDataLabels], options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { display: false } } }, plugins: { legend: { display: false }, datalabels: { color: '#ffffff', font: { weight: '900', size: 11 }, formatter: v => v > 0 ? new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(v) : '' } } } });
+    }
+
+    function backToSelection() {
+        if (appCurrentState === "CATALOGO_LISTO") { catalogContainer.innerHTML = ''; stepStrategy.classList.remove('hidden'); btnPrint.setAttribute('disabled', 'true'); closeCartDrawer(); appCurrentState = "MENU_ESTRATEGIAS"; }
+        else if (appCurrentState === "MENU_ESTRATEGIAS") { stepStrategy.classList.add('hidden'); step2.classList.remove('hidden'); hideCartBar(); appCurrentState = "LISTA_CLIENTES"; }
+        else if (appCurrentState === "LISTA_CLIENTES") backToAdvisors();
+        else if (appCurrentState === "PANEL_ASESORES") backToRegionals();
+        else if (appCurrentState === "PANEL_REGIONALES") { step2.classList.add('hidden'); step1.classList.remove('hidden'); btnBack.classList.add('hidden'); fileInput.value = ''; appCurrentState = "LOAD"; }
+    }
+
+    function getLastPriceForClient(sku, clientObj) {
+        let lastPrice = null;
+        if (clientObj && clientObj.rawItems) {
+            const historyRecords = clientObj.rawItems.filter(raw => getSku(raw).toUpperCase() === sku.toUpperCase());
+            let sortedHistory = [...historyRecords].sort((a,b)=> {
+                let da = a.fecha_doc;
+                let db = b.fecha_doc;
+                let ta = da ? da.getTime() : 0;
+                let tb = db ? db.getTime() : 0;
+                return ta - tb;
+            });
+            for (let k = sortedHistory.length - 1; k >= 0; k--) {
+                let pz = sortedHistory[k]._venta_piezas_calculada;
+                let mn = sortedHistory[k]._vmn_calculado;
+                if (pz > 0 && mn > 0) { 
+                    lastPrice = mn / pz; 
+                    break; 
+                }
+            }
+        }
+        return lastPrice;
+    }
+
+    function getPrecioSugerido(sku, tipoCli) {
+        if (!globalSkuStats[sku]) return 0;
+        let stats = globalSkuStats[sku][tipoCli || "GENERAL"];
+        if (!stats) return 0;
+        if (stats.pz > 0) return stats.mn / stats.pz;
+        return 0;
+    }
+    
+    function openManualModal() {
+        document.getElementById('manual-modal').classList.remove('hidden');
+        renderManualSelectedList();
+    }
+
+    function closeManualModal() {
+        document.getElementById('manual-modal').classList.add('hidden');
+        document.getElementById('manual-search-input').value = '';
+        document.getElementById('manual-search-results').classList.add('hidden');
+    }
+
+    function handleManualSearch() {
+        const query = document.getElementById('manual-search-input').value.toLowerCase().trim();
+        const resultsBox = document.getElementById('manual-search-results');
+        resultsBox.innerHTML = '';
+        
+        if (query.length < 2) { resultsBox.classList.add('hidden'); return; }
+        
+        let count = 0;
+        for (let [sku, item] of globalProducts.entries()) {
+            const desc = getDescription(item).toLowerCase();
+            if (sku.toLowerCase().includes(query) || desc.includes(query)) {
+                if(!manualSkus.includes(sku)) {
+                    const div = document.createElement('div');
+                    div.className = "p-3 hover:bg-neon-green hover:text-black cursor-pointer border-b border-white/10 text-[11px] font-bold text-slate-300 transition-colors flex justify-between";
+                    div.innerHTML = `<span class="truncate pr-4">${sku} - ${getDescription(item)}</span> <span class="font-black text-lg leading-none">+</span>`;
+                    div.onclick = () => {
+                        manualSkus.push(sku);
+                        manualSkusQty[sku] = 1; 
+                        document.getElementById('manual-search-input').value = '';
+                        resultsBox.classList.add('hidden');
+                        renderManualSelectedList();
+                        document.getElementById('manual-search-input').focus();
+                    };
+                    resultsBox.appendChild(div);
+                    count++;
+                    if (count > 30) break; 
+                }
+            }
+        }
+        
+        if (count > 0) resultsBox.classList.remove('hidden');
+        else resultsBox.classList.add('hidden');
+    }
+
+    function updateManualQty(sku, qty) {
+        let val = parseInt(qty, 10);
+        if (isNaN(val) || val < 1) val = 1; 
+        manualSkusQty[sku] = val;
+    }
+
+    function removeManualSku(sku) {
+        manualSkus = manualSkus.filter(s => s !== sku);
+        delete manualSkusQty[sku];
+        renderManualSelectedList();
+    }
+
+    function clearManualSkus() {
+        if(manualSkus.length === 0) return;
+        if(confirm("¿Estás seguro de vaciar la cotización manual?")) {
+            manualSkus = [];
+            manualSkusQty = {};
+            renderManualSelectedList();
+        }
+    }
+
+    function renderManualSelectedList() {
+        const container = document.getElementById('manual-selected-list');
+        container.innerHTML = '';
+        
+        if (manualSkus.length === 0) {
+            container.innerHTML = '<div class="text-center text-slate-500 font-bold uppercase mt-10 text-[10px]">No hay códigos agregados a la lista</div>';
+            return;
+        }
+
+        const fmt = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
+        
+        [...manualSkus].reverse().forEach(sku => {
+            const prod = globalProducts.get(sku);
+            
+            let ultimoPrecio = getLastPriceForClient(sku, selectedClient);
+            let precioPromo = globalPromociones[sku] || 0;
+            let comentarioPromo = globalComentarioPromo[sku] || "";
+            let psug = getPrecioSugerido(sku, selectedClient.tipoCliente);
+
+            let txtComentario = "";
+            if (comentarioPromo !== "") txtComentario = comentarioPromo;
+            else if (ultimoPrecio !== null) txtComentario = "Precio Especial";
+            else txtComentario = "No aplica";
+
+            let txtSolicitado = precioPromo > 0 ? fmt.format(precioPromo) : "sin promoción";
+
+            let txtSugerido = "No aplica";
+            if (precioPromo === 0 && ultimoPrecio === null) {
+                txtSugerido = psug > 0 ? fmt.format(psug) : "Sin historial global";
+            }
+
+            let txtUltimo = ultimoPrecio !== null ? fmt.format(ultimoPrecio) : "sin historial";
+
+            container.innerHTML += `
+                <div class="bg-black/60 border border-white/10 rounded-xl p-4 flex justify-between items-start group hover:border-neon-green transition-colors relative">
+                    <button onclick="removeManualSku('${sku}')" class="absolute top-2 right-2 text-slate-500 hover:text-neon-red p-1 bg-white/5 rounded-full transition-colors border border-transparent hover:border-neon-red">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                    
+                    <div class="flex-grow w-full">
+                        <div class="text-neon-green font-black text-sm mb-1">${sku}</div>
+                        <div class="text-[9.5px] text-slate-300 uppercase font-bold truncate mb-3 pr-6">${getDescription(prod)}</div>
+                        
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="text-[8px] text-neon-cyan font-black uppercase bg-[#001233] px-2 py-1 rounded border border-neon-cyan/30">Piezas:</span>
+                            <input type="number" min="1" value="${manualSkusQty[sku] || 1}" onchange="updateManualQty('${sku}', this.value)" class="w-12 bg-[#030712] border border-neon-cyan/50 text-white text-[11px] font-black outline-none text-center rounded p-1 custom-scrollbar focus:border-neon-cyan">
+                        </div>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <div class="bg-black/40 border border-white/5 p-2 rounded-lg text-center flex flex-col justify-center min-h-[50px]">
+                                <div class="text-[7px] text-slate-400 font-bold uppercase mb-1">Comentario</div>
+                                <div class="text-[9px] text-neon-cyan font-black leading-tight">${txtComentario}</div>
+                            </div>
+                            <div class="bg-black/40 border border-white/5 p-2 rounded-lg text-center flex flex-col justify-center min-h-[50px]">
+                                <div class="text-[7px] text-slate-400 font-bold uppercase mb-1">P. Solicitado</div>
+                                <div class="text-[9px] text-white font-black leading-tight">${txtSolicitado}</div>
+                            </div>
+                            <div class="bg-black/40 border border-white/5 p-2 rounded-lg text-center flex flex-col justify-center min-h-[50px]">
+                                <div class="text-[7px] text-slate-400 font-bold uppercase mb-1">P. Sugerido</div>
+                                <div class="text-[9px] text-neon-orange font-black leading-tight">${txtSugerido}</div>
+                            </div>
+                            <div class="bg-black/40 border border-white/5 p-2 rounded-lg text-center flex flex-col justify-center min-h-[50px]">
+                                <div class="text-[7px] text-slate-400 font-bold uppercase mb-1">Último Vendido</div>
+                                <div class="text-[9px] text-neon-green font-black leading-tight">${txtUltimo}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        });
+    }
+
+    function exportManualExcel() {
+        if (manualSkus.length === 0) { showAlert("No hay códigos capturados."); return; }
+        let excelData = [];
+        
+        manualSkus.forEach(sku => {
+            let ultimoPrecio = getLastPriceForClient(sku, selectedClient);
+            let precioPromo = globalPromociones[sku] || 0;
+            let comentarioPromo = globalComentarioPromo[sku] || "";
+            let psug = getPrecioSugerido(sku, selectedClient.tipoCliente);
+
+            let exComentario = "";
+            if (comentarioPromo !== "") exComentario = comentarioPromo;
+            else if (ultimoPrecio !== null) exComentario = "Precio Especial";
+            else exComentario = "no aplica";
+
+            let exPrecio = "";
+            if (precioPromo > 0) exPrecio = parseFloat(precioPromo.toFixed(2));
+            else if (ultimoPrecio !== null) exPrecio = parseFloat(ultimoPrecio.toFixed(2));
+            else if (psug > 0) exPrecio = parseFloat(psug.toFixed(2));
+            
+            excelData.push({
+                "Producto": sku,
+                "Cantidad": manualSkusQty[sku] || 1, 
+                "Precio solicitado": exPrecio,
+                "Comentario": exComentario
+            });
+        });
+        
+        const ws = XLSX.utils.json_to_sheet(excelData);
+        const wb = XLSX.utils.book_new();
+        ws['!cols'] = [{wch: 20}, {wch: 15}, {wch: 15}, {wch: 40}];
+        
+        const headerStyle = { font: { color: { rgb: "FFFFFF" }, bold: true }, fill: { fgColor: { rgb: "17365D" } }, alignment: { horizontal: "center" } };
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+            const address = XLSX.utils.encode_col(C) + "1";
+            if (!ws[address]) continue;
+            ws[address].s = headerStyle;
+        }
+        
+        XLSX.utils.book_append_sheet(wb, ws, "Cotización Manual");
+        XLSX.writeFile(wb, `CotizacionManual_${selectedClient.id}_${new Date().getTime()}.xlsx`);
+    }
+
+    function printManualCatalog() {
+        if (manualSkus.length === 0) { showAlert("No hay códigos capturados."); return; }
+        closeManualModal();
+        generateCatalogByStrategy('manual');
+    }
+
+    function hasClientPurchasedSku(sku, clientObj) {
+        if (!clientObj || !Array.isArray(clientObj.rawItems)) return false;
+        const normalizedSku = String(sku || "").trim().toUpperCase();
+        return clientObj.rawItems.some(item => getSku(item).toUpperCase() === normalizedSku);
+    }
+
+    function applyStrategyOpportunityFilter(products) {
+        const selector = document.getElementById('strategy-opportunity-filter');
+        const mode = selector ? selector.value : 'all';
+        if (mode !== 'new') return products;
+        return products.filter(product => !hasClientPurchasedSku(getSku(product), selectedClient));
+    }
+
+    function sortProductsBySkuDescending(products) {
+        return [...products].sort((a, b) =>
+            getSku(b).localeCompare(getSku(a), 'es', { numeric: true, sensitivity: 'base' })
+        );
+    }
+
+    function generateCatalogByStrategy(strategyType) {
+        if (!selectedClient) { showAlert("No hay cliente seleccionado."); return; }
+        let targetProducts = [];
+        // Regla general: las estrategias automáticas se ordenan de mayor a menor venta.
+        // Tipo Promoción incluye todos los códigos; las demás estrategias tienen un máximo de 50.
+        const sortedGlobalSkusMn = Object.keys(globalSalesMn).sort((a, b) => (globalSalesMn[b] || 0) - (globalSalesMn[a] || 0));
+        const sortedGlobalSkusPesos = Object.keys(globalSalesPesos).sort((a, b) => (globalSalesPesos[b] || 0) - (globalSalesPesos[a] || 0));
+        
+        if (strategyType === 'manual') {
+            if (manualSkus.length === 0) { showAlert("No has capturado ningún código."); return; }
+            currentStrategyLabel = "Cotización Manual";
+            targetProducts = [...manualSkus].reverse().map(sku => globalProducts.get(sku)).filter(Boolean);
+        } else if (strategyType === 'skuPorMes') {
+            const targetMonth = parseInt(document.getElementById('sku-month-selector').value, 10);
+            const targetYear = parseInt(document.getElementById('sku-year-selector').value, 10);
+            const scope = document.getElementById('sku-scope-selector').value;
+            currentStrategyLabel = `Top ${MESES_NOMBRES[targetMonth]} ${targetYear} (${scope === 'client' ? 'CLIENTE' : 'GLOBAL'})`;
+            let skuVaaMap = {}, hasValidDates = false;
+            const clientsToProcess = scope === 'client' ? [selectedClient] : Array.from(allClientsFlat.values());
+            
+            clientsToProcess.forEach(clientObj => {
+                if (clientObj && clientObj.rawItems) {
+                    clientObj.rawItems.forEach(item => {
+                        const sku = getSku(item); if (!sku) return;
+                        const fechaFact = item.fecha_doc;
+                        if (fechaFact) {
+                            hasValidDates = true;
+                            if (fechaFact.getMonth() === targetMonth && fechaFact.getFullYear() === targetYear) {
+                                let ventaPesos = item._vmn_calculado || 0;
+                                if (ventaPesos > 0) { if (!skuVaaMap[sku]) skuVaaMap[sku] = 0; skuVaaMap[sku] += ventaPesos; }
+                            }
+                        }
+                    });
+                }
+            });
+            if (!hasValidDates) { showAlert("EL ARCHIVO NO TIENE FECHAS VÁLIDAS."); return; }
+            let skusOrdenados = Object.keys(skuVaaMap).map(sku => ({ sku, totalVenta: skuVaaMap[sku] })).sort((a,b)=>b.totalVenta - a.totalVenta);
+            targetProducts = skusOrdenados.slice(0, 50).map(x => globalProducts.get(x.sku)).filter(Boolean);
+        } else if (strategyType === 'noComprados90') {
+            currentStrategyLabel = "Recuperación +90 días";
+            const limitDate = new Date(); limitDate.setDate(limitDate.getDate() - 90);
+            const skuMaxDate = new Map();
+            selectedClient.rawItems.forEach(item => {
+                const sku = getSku(item), d = item.fecha_doc;
+                if (d && (!skuMaxDate.has(sku) || d > skuMaxDate.get(sku))) skuMaxDate.set(sku, d);
+            });
+            const inactiveSkus = [];
+            for (const [sku, lastDate] of skuMaxDate.entries()) { if (lastDate < limitDate) inactiveSkus.push(sku); }
+            targetProducts = inactiveSkus.sort((a,b)=>(globalSalesPesos[b]||0)-(globalSalesPesos[a]||0)).slice(0, 50).map(sku => globalProducts.get(sku)).filter(Boolean);
+        } else if (strategyType === 'topGlobal') {
+            currentStrategyLabel = "Top Global Más Vendidos";
+            targetProducts = sortedGlobalSkusMn.slice(0, 50).map(sku => globalProducts.get(sku)).filter(Boolean);
+        } else if (strategyType === 'tipoPromocion') {
+            const selectedPromo = document.getElementById('promo-selector').value; if (!selectedPromo) { showAlert("SELECCIONA UNA PROMO."); return; }
+            currentStrategyLabel = `Promoción: ${selectedPromo}`;
+            const selectedPromoNorm = normalizeBrandName(selectedPromo);
+            targetProducts = Array.from(globalProducts.keys())
+                .filter(sku => normalizeBrandName(globalPromoText[sku] || globalComentarioPromo[sku] || "") === selectedPromoNorm)
+                .sort((a,b)=>(globalSalesPesos[b]||0)-(globalSalesPesos[a]||0))
+                .map(sku => globalProducts.get(sku)).filter(Boolean);
+        } else if (strategyType === 'topMarca') {
+            currentStrategyLabel = "Top Marcas Propias";
+            targetProducts = sortedGlobalSkusPesos.map(sku => globalProducts.get(sku)).filter(item => item && marcasPropias.map(b=>b.toUpperCase()).includes(normalizeBrandName(getBrand(item)))).slice(0, 50);
+        } else if (strategyType === 'marcaFamilia') {
+            const selectedBrand = document.getElementById('brand-selector').value;
+            const selectedFamilia = document.getElementById('marca-family-selector').value;
+            if (!selectedBrand) { showAlert("SELECCIONA UNA MARCA."); return; }
+            currentStrategyLabel = `Marca: ${selectedBrand}` + (selectedFamilia ? ` | Familia: ${selectedFamilia}` : '');
+            targetProducts = sortedGlobalSkusPesos.map(sku => globalProducts.get(sku)).filter(item => item && normalizeBrandName(getBrand(item)) === normalizeBrandName(selectedBrand) && (!selectedFamilia || normalizeBrandName(getFamily(item)) === normalizeBrandName(selectedFamilia))).slice(0, 50);
+        } else if (strategyType === 'familyEspecifica') {
+            const selectedFamily = document.getElementById('family-selector').value, selectedSistema = document.getElementById('sistema-selector').value;
+            if (!selectedFamily) { showAlert("SELECCIONA UNA FAMILIA."); return; }
+            currentStrategyLabel = `Familia Propia ${selectedFamily}` + (selectedSistema ? ` - ${selectedSistema}` : '');
+            targetProducts = sortedGlobalSkusPesos.map(sku => globalProducts.get(sku)).filter(item => item && normalizeBrandName(getFamily(item)) === normalizeBrandName(selectedFamily) && marcasPropias.map(b=>normalizeBrandName(b)).includes(normalizeBrandName(getBrand(item))) && (!selectedSistema || normalizeBrandName(getSistema(item)) === normalizeBrandName(selectedSistema))).slice(0, 50);
+        } else if (strategyType === 'tipoServicioFamilia') {
+            const selectedServicio = document.getElementById('servicio-selector').value;
+            const selectedFamilia = document.getElementById('servicio-family-selector').value;
+            if (!selectedServicio) { showAlert("SELECCIONA UN TIPO DE SERVICIO."); return; }
+            currentStrategyLabel = `Servicio: ${selectedServicio}` + (selectedFamilia ? ` | Familia: ${selectedFamilia}` : '');
+            targetProducts = sortedGlobalSkusPesos.map(sku => globalProducts.get(sku)).filter(item => item && normalizeBrandName(getTipoServicio(item)) === normalizeBrandName(selectedServicio) && (!selectedFamilia || normalizeBrandName(getFamily(item)) === normalizeBrandName(selectedFamilia))).slice(0, 50);
+        }
+
+        // Filtro universal: todos los códigos o únicamente nuevas oportunidades.
+        targetProducts = applyStrategyOpportunityFilter(targetProducts);
+
+        // Orden universal para todos los reportes: código de mayor a menor.
+        targetProducts = sortProductsBySkuDescending(targetProducts);
+
+        if (targetProducts.length === 0) {
+            const opportunityMode = document.getElementById('strategy-opportunity-filter')?.value || 'all';
+            const message = opportunityMode === 'new'
+                ? "NO SE ENCONTRARON CÓDIGOS DE NUEVA OPORTUNIDAD PARA ESTA ESTRATEGIA."
+                : "NO SE ENCONTRARON CÓDIGOS PARA ESTA ESTRATEGIA.";
+            showAlert(message);
+            return;
+        }
+        renderCatalog(targetProducts);
+    }
+
+    function renderCatalog(products) {
+        catalogContainer.innerHTML = ''; stepStrategy.classList.add('hidden'); appCurrentState = "CATALOGO_LISTO"; btnPrint.removeAttribute('disabled');
+        const itemsPerPage = 9, totalPages = Math.ceil(products.length / itemsPerPage), moneyFmt = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
+        const proyeccion = DIAS_TRANSCURRIDOS > 0 ? (selectedClient.venta / DIAS_TRANSCURRIDOS) * DIAS_EFECTIVOS_MES : 0;
+        const porcentaje = selectedClient.cuota > 0 ? (proyeccion / selectedClient.cuota) * 100 : 0;
+
+        for (let i = 0; i < totalPages; i++) {
+            const pageProducts = products.slice(i * itemsPerPage, (i + 1) * itemsPerPage);
+            const pageSheet = document.createElement('div'); pageSheet.className = "page-sheet";
+            let headerHtml = `
+                <div class="client-header-card">
+                    <div class="flex-grow">
+                        <div class="text-[8px] font-black tracking-widest opacity-60 uppercase mb-0.5">Análisis Comercial Estructurado</div>
+                        <div class="neon-client-name uppercase">${selectedClient.cliVendId || selectedClient.id} - ${selectedClient.name}</div>
+                        <div class="text-[8.5px] font-bold text-slate-200 mt-1.5 uppercase flex items-center gap-2">Estrategia: <span class="strategy-badge">${currentStrategyLabel}</span></div>
+                    </div>
+                    <div class="header-divider"></div>
+                    <div class="text-center px-2 min-w-[120px]">
+                        <div class="lbl-secundario mb-1">Proyección Cierre</div>
+                        <div class="text-xl font-black ${getSemaforoProyeccionTextClass(porcentaje)}">${porcentaje.toFixed(1)}%</div>
+                        <div class="text-[6.5px] font-bold text-slate-300 uppercase mt-0.5">${MESES_NOMBRES[CURRENT_MONTH]} (Día ${DIAS_TRANSCURRIDOS}/${DIAS_EFECTIVOS_MES})</div>
+                    </div>
+                    <div class="header-divider"></div>
+                    <div class="text-center px-2 min-w-[110px]">
+                        <div class="lbl-secundario mb-1">Venta / Meta</div>
+                        <div class="text-[10px] font-black text-white">${moneyFmt.format(selectedClient.venta)}</div>
+                        <div class="text-[7px] font-bold text-neon-red uppercase mt-0.5">Meta: ${moneyFmt.format(selectedClient.cuota)}</div>
+                    </div>
+                    <div class="header-divider"></div>
+                    <div class="flex flex-col items-center justify-center"><div class="pag-badge">PÁG.<br>${i + 1}/${totalPages}</div></div>
+                </div>
+                <div class="grid-container">`;
+            
+            pageProducts.forEach(prod => {
+                const skuCode = getSku(prod), imgUrl = getProductImageUrl(prod) || 'https://via.placeholder.com/150?text=Sin+Imagen', isSelectedClass = cartItems.has(skuCode) ? 'selected' : '', brandLogo = getBrandLogoUrl(prod);
+                let brandDisplay = brandLogo ? `<img src="${brandLogo}" class="h-5 max-w-[60px] object-contain" alt="Logo" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='inline';"><span style="display:none;" class="text-[7px] font-black text-slate-400 uppercase">${getBrand(prod)}</span>` : `<span class="text-[7px] font-black text-slate-400 uppercase">${getBrand(prod)}</span>`;
+                
+                const historyRecords = selectedClient.rawItems.filter(raw => getSku(raw) === skuCode);
+                let uFecha = "SIN REGISTRO", uPrecio = 0;
+                let fechasValidas = historyRecords.map(r => r.fecha_doc).filter(Boolean);
+                if(fechasValidas.length > 0) uFecha = new Date(Math.max(...fechasValidas)).toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                
+                let sortedHistory = [...historyRecords].sort((a,b)=> (a.fecha_doc||0) - (b.fecha_doc||0));
+                for (let k = sortedHistory.length - 1; k >= 0; k--) {
+                    let pz = sortedHistory[k]._venta_piezas_calculada, mn = sortedHistory[k]._vmn_calculado;
+                    if (pz > 0) { uPrecio = mn / pz; break; }
+                }
+
+                let promoFinal = "";
+                if (globalPromociones[skuCode] > 0) promoFinal = moneyFmt.format(globalPromociones[skuCode]);
+                else if (globalPromoText[skuCode]) {
+                    let pureNum = Number(globalPromoText[skuCode].trim().replace(/[^\d.-]/g, ''));
+                    promoFinal = (!isNaN(pureNum) && pureNum > 0 && !globalPromoText[skuCode].toLowerCase().includes('x')) ? moneyFmt.format(pureNum) : globalPromoText[skuCode];
+                }
+
+                let nombrePromo = (globalPromoText[skuCode] || globalComentarioPromo[skuCode] || "").toUpperCase();
+                let promoHtml = "";
+                if (nombrePromo || (promoFinal && promoFinal !== "0" && promoFinal !== "$0.00")) {
+                    let tagLabel = nombrePromo ? `🔥 ${nombrePromo}` : "🔥 PROMOCIÓN", tagValue = (promoFinal && promoFinal !== "0" && promoFinal !== "$0.00") ? promoFinal : "";
+                    if (!tagValue) { tagValue = nombrePromo; tagLabel = "🔥 PROMOCIÓN"; }
+                    promoHtml = `<div class="spec-tag !border-[#ff004c]/30 mt-1 pb-1 flex justify-between items-center"><span class="text-[#ff004c] font-black truncate max-w-[50%] text-[6.5px]" title="${tagLabel}">${tagLabel}</span><span class="spec-value text-[#ff004c] font-black text-[11px]">${tagValue}</span></div>`;
+                }
+
+                let estadoCompra = uPrecio > 0 ? `<div class="w-full bg-[#00ff66]/10 border border-[#00ff66] text-[#00b347] text-center py-1.5 rounded text-[8.5px] font-black uppercase">✔ Adquirido Previamente</div>` : `<div class="w-full bg-[#ff004c]/10 border border-[#ff004c] text-[#ff004c] text-center py-1.5 rounded text-[8.5px] font-black uppercase"><span class="animate-pulse">🔥</span> Nueva Oportunidad</div>`;
+
+                headerHtml += `
+                    <div id="card-${skuCode}" class="card cursor-pointer transition-all ${isSelectedClass}" onclick="toggleCart('${skuCode}')">
+                        <div class="flex justify-between items-start"><span class="sku-badge">${skuCode}</span>${brandDisplay}</div>
+                        <div class="card-img-container"><img src="${imgUrl}" class="card-img" onerror="this.onerror=null; this.src='https://via.placeholder.com/150?text=No+Disponible'"></div>
+                        <div class="card-title" title="${getDescription(prod)}">${getDescription(prod)}</div>
+                        <div class="space-y-0.5 mb-2">
+                            <div class="spec-tag">Línea/Familia: <span class="spec-value">${getFamily(prod)}</span></div>
+                            <div class="spec-tag">Última Compra: <span class="spec-value">${uFecha}</span></div>
+                            ${promoHtml}
+                        </div>
+                        <div class="mt-auto pt-2 border-t border-dashed border-slate-200 w-full flex flex-col justify-center">${estadoCompra}</div>
+                    </div>`;
+            });
+
+            if (pageProducts.length < itemsPerPage) { for (let j = 0; j < (itemsPerPage - pageProducts.length); j++) headerHtml += `<div class="card opacity-0 border-none pointer-events-none"></div>`; }
+            headerHtml += `</div>`; pageSheet.innerHTML = headerHtml; catalogContainer.appendChild(pageSheet);
+        }
+    }
+
+    function toggleCart(sku) {
+        if (cartItems.has(sku)) { cartItems.delete(sku); const el = document.getElementById(`card-${sku}`); if(el) el.classList.remove('selected'); }
+        else { cartItems.add(sku); const el = document.getElementById(`card-${sku}`); if(el) el.classList.add('selected'); }
+        updateCartUI();
+    }
+    
+    function removeSkuFromCart() {
+        const input = document.getElementById('remove-sku-input'); const sku = input.value.trim().toUpperCase(); if (!sku) return;
+        let found = false;
+        for (let item of cartItems) { if (item.toUpperCase() === sku) { cartItems.delete(item); const el = document.getElementById(`card-${item}`); if (el) el.classList.remove('selected'); found = true; break; } }
+        if (found) { updateCartUI(); input.value = ''; } else showAlert("El código " + sku + " no está en tu cotización.");
+    }
+
+    function clearCart() {
+        if (cartItems.size === 0) return;
+        if (confirm("¿Estás seguro de vaciar toda la cotización general?")) {
+            cartItems.forEach(sku => { const el = document.getElementById(`card-${sku}`); if (el) el.classList.remove('selected'); });
+            cartItems.clear(); updateCartUI();
+        }
+    }
+
+    function updateCartUI() {
+        const bar = document.getElementById('cart-bar'); document.getElementById('cart-count').innerText = cartItems.size;
+        if (cartItems.size > 0) bar.classList.add('visible'); else { bar.classList.remove('visible'); closeCartDrawer(); }
+        renderCartItems();
+    }
+    
+    function hideCartBar() { cartItems.clear(); updateCartUI(); closeCartDrawer(); }
+    function openCartDrawer() { if(cartItems.size > 0) document.getElementById('cart-drawer').classList.remove('translate-x-full'); }
+    function closeCartDrawer() { document.getElementById('cart-drawer').classList.add('translate-x-full'); }
+
+    function getCalculatedPriceForClient(sku, clientObj) {
+        if (globalPromociones[sku] > 0) return globalPromociones[sku];
+        let lowest = null;
+        if (clientObj && clientObj.rawItems) {
+            clientObj.rawItems.filter(raw => getSku(raw) === sku).forEach(r => {
+                let pz = r._venta_piezas_calculada, mn = r._vmn_calculado;
+                if (pz > 0 && mn > 0 && (lowest === null || (mn / pz) < lowest)) lowest = mn / pz;
+            });
+        }
+        return lowest;
+    }
+
+    function renderCartItems() {
+        const container = document.getElementById('cart-drawer-items'); container.innerHTML = '';
+        if(cartItems.size === 0) { container.innerHTML = '<div class="text-center text-slate-500 font-bold uppercase mt-10 text-[10px]">El carrito está vacío</div>'; return; }
+        const fmt = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
+
+        Array.from(cartItems).reverse().forEach(sku => {
+            const prod = globalProducts.get(sku); if (!prod) return;
+            const calcP = getCalculatedPriceForClient(sku, selectedClient);
+            const promo = globalComentarioPromo[sku] || (globalPromoText[sku] && globalPromoText[sku] !== "0" ? globalPromoText[sku] : (globalPromociones[sku] ? fmt.format(globalPromociones[sku]) : 'Precio sin IVA'));
+            container.innerHTML += `
+                <div class="bg-white/5 border border-white/10 hover:border-neon-cyan transition-colors rounded-xl p-4 relative group">
+                    <button onclick="toggleCart('${sku}')" class="absolute top-3 right-3 text-slate-500 hover:text-neon-red bg-black/50 rounded-full p-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                    <div class="text-neon-cyan font-black text-sm mb-1">${sku}</div>
+                    <div class="text-[9.5px] text-slate-300 uppercase font-bold mb-3 line-clamp-2 pr-6">${getDescription(prod)}</div>
+                    <div class="grid grid-cols-2 gap-3 mt-2 pt-3 border-t border-white/5">
+                        <div class="bg-black/40 p-2 rounded border border-white/5"><span class="text-[7.5px] text-slate-400 font-bold block">Precio Histórico</span><span class="text-[11px] text-white font-black">${calcP !== null ? fmt.format(calcP) : ''}</span></div>
+                        <div class="bg-black/40 p-2 rounded border border-white/5"><span class="text-[7.5px] text-slate-400 font-bold block">Estatus/Promo</span><span class="text-[11px] font-black text-neon-red line-clamp-1">${promo}</span></div>
+                    </div>
+                </div>`;
+        });
+    }
+
+    function populateSelectors() {
+        const uniqueBrands = [...new Set(Array.from(globalProducts.values()).map(item => getBrand(item)).filter(b => b && b !== "SIN MARCA"))].sort();
+        const bSel = document.getElementById('brand-selector'); if(bSel) { bSel.innerHTML = '<option value="">Seleccionar marca...</option>'; uniqueBrands.forEach(b => { const opt = document.createElement('option'); opt.value = b; opt.innerText = b; bSel.appendChild(opt); }); }
+        
+        const uniqueOwnFamilies = [...new Set(Array.from(globalProducts.values()).filter(item => marcasPropias.map(b=>b.toUpperCase()).includes(normalizeBrandName(getBrand(item)))).map(item => getFamily(item)).filter(f => f && f !== "SIN FAMILIA"))].sort();
+        const fSel = document.getElementById('family-selector'); if(fSel) { fSel.innerHTML = '<option value="">Seleccionar familia...</option>'; uniqueOwnFamilies.forEach(f => { const opt = document.createElement('option'); opt.value = f; opt.innerText = f.toUpperCase(); fSel.appendChild(opt); }); }
+
+        const uniqueAllFamilies = [...new Set(Array.from(globalProducts.values()).map(item => getFamily(item)).filter(f => f && f !== "SIN FAMILIA"))].sort();
+        
+        const sfSel = document.getElementById('servicio-family-selector');
+        if (sfSel) {
+            sfSel.innerHTML = '<option value="">Seleccionar familia (Opcional)...</option>';
+            uniqueAllFamilies.forEach(f => { const opt = document.createElement('option'); opt.value = f; opt.innerText = f.toUpperCase(); sfSel.appendChild(opt); });
+        }
+
+        const mfSel = document.getElementById('marca-family-selector');
+        if (mfSel) {
+            mfSel.innerHTML = '<option value="">Seleccionar familia (Opcional)...</option>';
+            uniqueAllFamilies.forEach(f => { const opt = document.createElement('option'); opt.value = f; opt.innerText = f.toUpperCase(); mfSel.appendChild(opt); });
+        }
+
+        const uniqueSistemas = [...new Set(Array.from(globalProducts.values()).map(item => getSistema(item)).filter(s => s && s !== "SIN SISTEMA"))].sort();
+        const sSel = document.getElementById('sistema-selector'); if(sSel) { sSel.innerHTML = '<option value="">Seleccionar sistema (Opcional)...</option>'; uniqueSistemas.forEach(s => { const opt = document.createElement('option'); opt.value = s; opt.innerText = s.toUpperCase(); sSel.appendChild(opt); }); }
+
+        const uniqueServicios = [...new Set(Array.from(globalProducts.values()).map(item => getTipoServicio(item)).filter(s => s && s !== "SIN SERVICIO"))].sort();
+        const serSel = document.getElementById('servicio-selector'); if(serSel) { serSel.innerHTML = '<option value="">Seleccionar servicio...</option>'; uniqueServicios.forEach(s => { const opt = document.createElement('option'); opt.value = s; opt.innerText = s.toUpperCase(); serSel.appendChild(opt); }); }
+
+        const uniqueArmadoras = [...new Set(Array.from(globalProducts.values()).map(item => getArmadora(item)).filter(s => s && s !== "SIN ARMADORA"))].sort();
+        const armSel = document.getElementById('armadora-selector'); if(armSel) { armSel.innerHTML = '<option value="">Seleccionar armadora (Opcional)...</option>'; uniqueArmadoras.forEach(s => { const opt = document.createElement('option'); opt.value = s; opt.innerText = s.toUpperCase(); armSel.appendChild(opt); }); }
+
+        const pSel = document.getElementById('promo-selector');
+        if (pSel) {
+            const uniquePromos = new Map();
+            Array.from(globalProducts.keys()).forEach(sku => {
+                const p = globalPromoText[sku] || globalComentarioPromo[sku] || null;
+                if (p) uniquePromos.set(normalizeBrandName(p), p);
+            });
+            pSel.innerHTML = '<option value="">Seleccionar promo...</option>'; [...uniquePromos.values()].sort((a,b)=>a.localeCompare(b, 'es')).forEach(p => { const opt = document.createElement('option'); opt.value = p; opt.innerText = p.toUpperCase(); pSel.appendChild(opt); });
+        }
+
+        const ySel = document.getElementById('sku-year-selector');
+        if (ySel && ySel.options.length === 0) {
+            for (let i = CURRENT_YEAR - 2; i <= CURRENT_YEAR; i++) { const opt = document.createElement('option'); opt.value = i; opt.innerText = i; ySel.appendChild(opt); }
+            ySel.value = CURRENT_YEAR; document.getElementById('sku-month-selector').value = CURRENT_MONTH;
+        }
+    }
+
+    function exportCartToExcel() {
+        if (cartItems.size === 0) { showAlert("No hay artículos seleccionados."); return; }
+        let excelData = []; const fmt = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
+        cartItems.forEach(sku => {
+            const prod = globalProducts.get(sku); if (!prod) return;
+            let comment = globalComentarioPromo[sku] || (globalPromoText[sku] && globalPromoText[sku] !== "0" ? globalPromoText[sku] : (globalPromociones[sku] ? fmt.format(globalPromociones[sku]) : "Precio Sin IVA"));
+            const calcP = getCalculatedPriceForClient(sku, selectedClient);
+            excelData.push({ "Producto": sku, "Cantidad": 1, "Precio solicitado": calcP !== null ? parseFloat(calcP.toFixed(2)) : "", "Comentario": comment });
+        });
+        const ws = XLSX.utils.json_to_sheet(excelData), wb = XLSX.utils.book_new();
+        ws['!cols'] = [{wch: 20}, {wch: 15}, {wch: 25}, {wch: 40}];
+        XLSX.utils.book_append_sheet(wb, ws, "Cotización");
+        XLSX.writeFile(wb, `Cotizacion_${selectedClient.id}_${new Date().getTime()}.xlsx`);
+    }
+</script>
+</body>
+</html>
